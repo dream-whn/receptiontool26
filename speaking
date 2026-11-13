@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>看圖說普通話</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#fff8e7;--card:#fff;--tx:#3b2f1e;--ac:#ff7a45;--ok:#2fb344;--no:#e5484d;--bd:#f0dcaa}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1e1a12;--card:#2b261b;--tx:#f5ead2;--bd:#4a4026}}
+:root[data-theme="dark"]{--bg:#1e1a12;--card:#2b261b;--tx:#f5ead2;--bd:#4a4026}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;text-align:center;min-height:100vh}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:8px 0}
+.card{background:var(--card);border:3px solid var(--bd);border-radius:28px;padding:20px;margin:12px 0}
+.pic{font-size:min(38vw,180px);line-height:1.1;min-height:140px;display:flex;align-items:center;justify-content:center}
+.pic img{max-width:min(60vw,240px);max-height:240px;border-radius:20px;object-fit:contain}
+.word{font-size:2rem;font-weight:700;margin-top:6px}
+.py{font-size:1.2rem;opacity:.75;margin-bottom:8px}
+button{font:inherit;border:0;border-radius:999px;padding:12px 22px;font-size:1.15rem;background:var(--ac);color:#fff;cursor:pointer;margin:5px;transition:transform .1s}
+button:active{transform:scale(.96)}
+button.sec{background:var(--bd);color:var(--tx)}
+button.big{font-size:1.6rem;padding:18px 36px}
+button.rec{background:#e5484d;animation:p 1s infinite}
+@keyframes p{50%{transform:scale(1.08)}}
+.fb{font-size:4rem;min-height:5.2rem;line-height:1.2}
+.fb.ok{color:var(--ok)}.fb.no{color:var(--no);animation:sh .4s}
+@keyframes sh{25%{transform:translateX(-12px)}75%{transform:translateX(12px)}}
+.small{font-size:.95rem;opacity:.8;margin-top:6px}
+#admin{display:none;text-align:left}
+#admin input[type=text]{font:inherit;padding:10px;border:2px solid var(--bd);border-radius:12px;background:var(--bg);color:var(--tx);width:100%;margin:4px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.row input[type=text]{flex:1;min-width:90px;width:auto}
+.item{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid var(--bd)}
+.item .e{font-size:2rem;width:48px;text-align:center}.item .e img{width:44px;height:44px;border-radius:8px;object-fit:cover}
+.item span.t{flex:1}
+.item button{padding:6px 12px;font-size:.95rem;margin:2px}
+.stars{font-size:1.4rem;font-weight:bold}
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:9}
+#modal .box{background:var(--card);border-radius:24px;padding:24px;width:min(90vw,340px);text-align:center}
+#modal input{font:inherit;font-size:1.3rem;width:100%;padding:12px;border:2px solid var(--bd);border-radius:12px;background:var(--bg);color:var(--tx);margin:12px 0;text-align:center}
+</style>
+</head>
+<body>
+<main>
+<div id="play">
+  <h1>🐼 看圖說普通話</h1>
+  <div class="stars" id="stars">⭐ 0</div>
+  <div class="card">
+    <div class="pic" id="pic"></div>
+    <div class="word" id="word" style="display:none"></div>
+    <div class="py" id="py" style="display:none"></div>
+    <div>
+      <button class="sec" id="hear">🔊 標準讀音</button>
+      <button class="sec" id="myrec" style="display:none">▶ 我的錄音</button>
+      <button class="sec" id="hintBtn">👁️ 提示</button>
+    </div>
+    <div class="fb" id="fb"></div>
+    <div class="small" id="heard"></div>
+  </div>
+  <button class="big" id="mic">🎤</button>
+  <button class="sec" id="next">➡️</button>
+  <div class="small" id="note"></div>
+  <div id="manualBox" style="display:none;margin-top:8px">
+    <button onclick="result(true,'老師評分')">⭕ 答對</button>
+    <button class="sec" onclick="result(false,'老師評分')">❌ 再試一次</button>
+  </div>
+  <p><button class="sec" id="toAdmin">⚙️ 老師設定</button></p>
+</div>
+
+<div id="admin">
+  <h1 style="text-align:center">⚙️ 老師設定</h1>
+  <div class="card">
+    <b>新增詞語</b>
+    <input type="text" id="nw" placeholder="詞語 (例: 蘋果)">
+    <div class="row">
+      <input type="text" id="np" placeholder="拼音 (自動產生，可修改)">
+      <button class="sec" id="autopy">🔤 自動拼音</button>
+    </div>
+    <div class="row">
+      <input type="text" id="ne" placeholder="圖片: 自動配對，或輸入表情符號">
+      <button class="sec" id="auto">🪄 自動配圖</button>
+    </div>
+    <div class="row">
+      <label class="small">或上傳照片: <input type="file" id="nf" accept="image/*"></label>
+    </div>
+    <div class="row">
+      <button class="sec" id="recStd">🎙 錄標準讀音 (最長4秒)</button>
+      <span class="small" id="recStatus">尚未錄音</span>
+    </div>
+    <div class="row">
+      <span class="small">預覽:</span>
+      <span id="prev" style="font-size:2.5rem"></span>
+    </div>
+    <button id="add">➕ 加入詞語</button>
+  </div>
+  <div class="card" id="list"></div>
+  <div class="small">詞語和老師錄音儲存在此裝置的瀏覽器內，請在同一部平板或電腦上設定及使用。</div>
+  <p style="text-align:center">
+    <button class="sec" id="reset">還原預設詞語</button>
+    <button class="sec" id="chpw">🔑 更改密碼</button>
+    <button id="back">✅ 完成，回到練習</button>
+  </p>
+</div>
+
+<div id="modal">
+  <div class="box">
+    <div id="mtitle"></div>
+    <input type="password" id="mpw" autocomplete="off" placeholder="預設密碼: 1234">
+    <button id="mok">確定</button>
+    <button class="sec" id="mcancel">取消</button>
+  </div>
+</div>
+</main>
+
+<script src="https://jsdelivr.net"></script>
+<script>
+const EMOJI={蘋果:"🍎",香蕉:"🍌",西瓜:"🍉",葡萄:"🍇",橙:"🍊",橙子:"🍊",草莓:"🍓",梨:"🍐",桃:"🍑",檸檬:"🍋",菠蘿:"🍍",番茄:"🍅",胡蘿蔔:"🥕",玉米:"🌽",麵包:"🍞",雞蛋:"🥚",牛奶:"🥛",米飯:"🍚",麵條:"🍜",餅乾:"🍪",蛋糕:"🎂",雪糕:"🍦",糖果:"🍬",水:"💧",貓:"🐱",小貓:"🐱",狗:"🐶",小狗:"🐶",兔子:"🐰",老虎:"🐯",獅子:"🦁",大象:"🐘",猴子:"🐵",熊貓:"🐼",小熊:"🐻",豬:"🐷",小豬:"🐷",牛:"🐮",馬:"🐴",羊:"🐑",雞:"🐔",鴨子:"🦆",小鳥:"🐦",魚:"🐟",青蛙:"🐸",蛇:"🐍",烏龜:"🐢",蝴蝶:"🦋",蜜蜂:"🐝",螞蟻:"🐜",太陽:"☀️",月亮:"🌙",星星:"⭐",雲:"☁️",雨:"🌧️",雪:"❄️",彩虹:"🌈",火:"🔥",花:"🌸",樹:"🌳",書:"📖",筆:"✏️",書包:"🎒",汽車:"🚗",巴士:"🚌",火車:"🚆",飛機:"✈️",船:"🚢",單車:"🚲",房子:"🏠",學校:"🏫",手:"✋",眼睛:"👁️",耳朵:"👂",鼻子:"👃",嘴巴:"👄",帽子:"🧢",鞋子:"👟",衣服:"👕",傘:"☂️",球:"⚽",氣球:"🎈",禮物:"🎁",鐘:"⏰",電話:"📞",電視:"📺",椅子:"🪑",床:"🛏️",杯子:"🥤",剪刀:"✂️",鑰匙:"🔑",爸爸:"👨",媽媽:"👩",寶寶:"👶",老師:"🧑‍🏫"};
+const DEF=[["蘋果","píng guǒ"],["香蕉","xiāng jiāo"],["小貓","xiǎo māo"],["小狗","xiǎo gǒu"],["太陽","tài yáng"],["月亮","yuè liang"],["汽車","qì chē"],["書包","shū bāo"]].map(([w,p])=>({w,p,e:EMOJI[w]}));
+const KEY="pth_words_v1",PK="pth_pw_v1";
+const $=id=>document.getElementById(id);
+
+let words=[],cur=null,stars=0,rec=null,listening=false;
+let tempImg="",tempAudio="",studentAudioUrl="";
+let mediaRec=null,audioChunks=[],recTimer=null;
+
+function getPin(){try{return localStorage.getItem(PK)||"1234"}catch(e){return"1234"}}
+function askPin(title,cb){
+  const m=$("modal"),i=$("mpw");
+  $("mtitle").textContent=title;i.value="";m.style.display="flex";
+  setTimeout(()=>i.focus(),50);
+  const done=v=>{m.style.display="none";$("mok").onclick=$("mcancel").onclick=i.onkeydown=null;if(v!==null)cb(v)};
+  $("mok").onclick=()=>done(i.value);
+  $("mcancel").onclick=()=>done(null);
+  i.onkeydown=e=>{if(e.key==="Enter")done(i.value)};
+}
+
+function py(w,noTone=false){
+  try{
+    if(window.pinyinPro){
+      return pinyinPro.pinyin(w,{toneType:noTone?"none":"symbol"});
+    }
+  }catch(e){}
+  const d=DEF.find(x=>x.w===w);
+  return d?d.p:"";
+}
+
+function load(){
+  try{const s=localStorage.getItem(KEY);words=s?JSON.parse(s):DEF.slice()}catch(e){words=DEF.slice()}
+  if(!words.length)words=DEF.slice();
+}
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(words))}
+  catch(e){alert("儲存空間已滿！請刪除部分舊詞語或照片。")}
+}
+
+function draw(el,it){
+  el.innerHTML="";
+  if(it.img){const i=new Image();i.src=it.img;el.appendChild(i)}
+  else el.textContent=it.e||"❓";
+}
+
+function show(){
+  $("fb").textContent="";$("fb").className="fb";$("heard").textContent="";
+  $("word").style.display="none";$("py").style.display="none";
+  $("myrec").style.display="none";
+  let n;
+  do{n=words[Math.floor(Math.random()*words.length)]}while(words.length>1&&cur&&n===cur);
+  cur=n;
+  draw($("pic"),cur);
+  $("word").textContent=cur.w;
+  $("py").textContent=cur.p||py(cur.w);
+}
+
+function speak(t,audioData){
+  if(audioData){
+    try{new Audio(audioData).play();return}catch(e){}
+  }
+  try{
+    const u=new SpeechSynthesisUtterance(t);
+    u.lang="zh-CN";u.rate=0.85;
+    speechSynthesis.cancel();speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+function beep(ok){
+  try{
+    const c=new (window.AudioContext||window.webkitAudioContext)();
+    (ok?[660,880,1100]:[300,220]).forEach((f,i)=>{
+      const o=c.createOscillator(),g=c.createGain();
+      o.frequency.value=f;o.connect(g);g.connect(c.destination);
+      g.gain.value=.15;o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.14);
+    });
+  }catch(e){}
+}
+
+const norm=s=>(s||"").replace(/[\s,。,.!?!?、，！？]/g,"");
+
+function isMatch(transcripts, targetWord, targetPy){
+  const cleanTargetPy = norm(targetPy || py(targetWord, true)).toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  const cleanTargetWord = norm(targetWord);
+
+  for(let t of transcripts){
+    const cleanT = norm(t);
+    if(!cleanT) continue;
+    if(cleanT.includes(cleanTargetWord)) return true;
+    const spokenPy = norm(py(cleanT, true)).toLowerCase();
+    if(cleanTargetPy && spokenPy.includes(cleanTargetPy)) return true;
+  }
+  return false;
+}
+
+function result(ok, heardText){
+  const f=$("fb");
+  if(heardText) $("heard").textContent="聽到: "+heardText;
+  if(ok){
+    f.textContent="⭕";f.className="fb ok";
+    stars++;$("stars").textContent="⭐ "+stars;
+    speak("太棒了");
+  }else{
+    f.textContent="❌";f.className="fb no";
+    $("word").style.display="block";$("py").style.display="block";
+  }
+  beep(ok);
+}
+
+// Speech Recognition Setup
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR){
+  $("note").textContent="此瀏覽器不支援自動語音辨識，請改用電腦版 Chrome，或使用下方老師按鈕評分。";
+  $("manualBox").style.display="block";
+}
+
