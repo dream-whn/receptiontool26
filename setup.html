@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>建立我的班級練習</title>
+<style>
+:root{--bg:#f6f3ec;--card:#fff;--tx:#2d2a26;--mut:#6f685d;--bd:#e3dccd;--ac:#e8632a;--ac2:#c9501c;--ok:#1f8a4c;--er:#c0392b;--code:#f1ede3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1a17;--card:#272420;--tx:#f1ece2;--mut:#a79f90;--bd:#3d382f;--code:#1f1d19}}
+:root[data-theme="dark"]{--bg:#1c1a17;--card:#272420;--tx:#f1ece2;--mut:#a79f90;--bd:#3d382f;--code:#1f1d19}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;line-height:1.6}
+main{max-width:760px;margin:0 auto;padding:20px 16px calc(40px + env(safe-area-inset-bottom,0px))}
+h1{font-size:1.6rem;margin:8px 0 4px}
+.lead{color:var(--mut);margin:0 0 20px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:18px;margin:14px 0}
+h2{font-size:1.15rem;margin:0 0 12px;display:flex;gap:10px;align-items:center}
+h2 .n{background:var(--ac);color:#fff;border-radius:50%;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;font-size:.95rem;flex:none}
+label.f{display:block;font-weight:600;margin:12px 0 4px}
+.hint{color:var(--mut);font-size:.9rem;font-weight:400}
+input[type=text]{width:100%;font:inherit;padding:10px 12px;border:1.5px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+input[type=text]:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #3b9eff;outline-offset:2px}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 16px;background:var(--ac);color:#fff;font-weight:600}
+button:hover{background:var(--ac2)}
+button.sec{background:transparent;color:var(--tx);border:1.5px solid var(--bd)}
+button.sec:hover{background:var(--code)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.icons{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.icons button{background:var(--bg);border:2px solid var(--bd);font-size:1.6rem;padding:4px 10px;border-radius:12px}
+.icons button[aria-pressed=true]{border-color:var(--ac);background:var(--code)}
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin:8px 0}
+.th{border:3px solid var(--bd);border-radius:14px;padding:0;overflow:hidden;background:var(--card);color:var(--tx);text-align:center}
+.th[aria-pressed=true]{border-color:var(--ac)}
+.th .sw{height:54px;display:block;position:relative}
+.th .sw i{position:absolute;right:8px;bottom:6px;width:22px;height:22px;border-radius:50%}
+.th b{display:block;padding:6px 4px;font-size:.95rem}
+.pv{border-radius:18px;padding:16px;text-align:center;margin:10px 0}
+.pv .c{border-radius:26px;padding:14px;margin:0 auto;max-width:300px}
+.pv h3{margin:0;font-size:2.4rem;line-height:1.2}
+.pv .t{font-weight:700;margin:2px 0 8px}
+.pv .b{display:inline-block;border-radius:999px;padding:8px 20px;color:#fff;font-weight:700;margin:3px}
+ol.s{margin:0 0 12px;padding-left:22px}ol.s li{margin:5px 0}
+pre,textarea.code{background:var(--code);border:1px solid var(--bd);border-radius:10px;padding:10px;width:100%;font:.8rem/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--tx);height:180px;resize:vertical}
+details{margin:8px 0}summary{cursor:pointer;color:var(--mut)}
+.msg{margin:8px 0;font-size:.95rem}.msg.ok{color:var(--ok)}.msg.er{color:var(--er)}
+.link{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;margin:10px 0;padding:10px;border:1px solid var(--bd);border-radius:12px}
+.link .nm{font-weight:700}
+.link .bt{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.link input{font-size:.85rem}
+.note{background:var(--code);border-radius:12px;padding:10px 12px;font-size:.92rem;color:var(--mut);margin:10px 0}
+</style></head><body><main>
+<h1>🎒 建立我的班級練習</h1>
+<p class="lead">填好下面三步,就會得到屬於你班的專屬連結,貼到 iPad 的 Safari 就能用。不需要寫任何程式。</p>
+
+<section>
+<h2><span class="n">1</span>班級和外觀</h2>
+<label class="f" for="cls">班名 <span class="hint">(可以填多個,用逗號分開,例如 RFAM,RFPM。每個班各有一條連結)</span></label>
+<input type="text" id="cls" placeholder="例如:RFAM" autocomplete="off">
+<label class="f" for="ttl">網頁標題 <span class="hint">(選填,學生畫面會顯示)</span></label>
+<input type="text" id="ttl" maxlength="30" placeholder="例如:小熊班說話練習" autocomplete="off">
+<label class="f">吉祥物圖示</label>
+<div class="icons" id="icons"></div>
+<label class="f" for="icc">或自己輸入一個表情符號</label>
+<input type="text" id="icc" maxlength="4" placeholder="🐼" style="max-width:120px" autocomplete="off">
+<label class="f">主題顏色</label>
+<div class="themes" id="themes"></div>
+<div class="pv" id="pv"><div class="c" id="pvc"><h3 id="pvi">🐼</h3><div class="t" id="pvt"></div><div><span class="b" id="pvb1">🎤 開始</span><span class="b" id="pvb2">▶ 下一個</span></div></div></div>
+</section>
+
+<section>
+<h2><span class="n">2</span>你自己的 Google 試算表 <span class="hint">(用來放詞語和看學生表現)</span></h2>
+<ol class="s">
+<li>用你的 Google 帳號新建一個空白試算表。</li>
+<li>點「擴充功能」→「Apps Script」,把裡面原有的內容全部刪除。</li>
+<li><button type="button" id="copyCode">📋 複製程式碼(已套用你的班名)</button> 然後貼到 Apps Script,按「儲存」。</li>
+<li>上方選 <b>setupClasses</b>,按「執行」。第一次要授權,選你的帳號,若出現警告就選「進階」→「前往…」。</li>
+<li>按「部署」→「新增部署作業」→ 類型選「網頁應用程式」→「誰可以存取」選<b>所有人</b>→「部署」。</li>
+<li>複製「網頁應用程式網址」(結尾是 /exec),貼在下面。</li>
+</ol>
+<div class="msg" id="copyMsg"></div>
+<details><summary>複製按鈕沒反應?自己選取程式碼</summary><textarea class="code" id="codeBox" readonly></textarea></details>
+<label class="f" for="sheet">網頁應用程式網址</label>
+<input type="text" id="sheet" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+<div class="row" style="margin-top:8px"><button type="button" class="sec" id="test">🔌 測試網址</button><span class="msg" id="testMsg"></span></div>
+<div class="note">之後在試算表的「詞語-班名」分頁輸入詞語(第一欄詞語,第二欄表情符號,第三欄可放圖片網址),學生打開網頁就會自動更新。每個班的學生表現在「學生進度-班名」分頁。<br>如果這一格留空,紀錄會送到學校共用的試算表。</div>
+</section>
+
+<section>
+<h2><span class="n">3</span>產生連結</h2>
+<button type="button" id="gen">✨ 產生我的連結</button>
+<div id="out"></div>
+<div class="note">把連結貼到 iPad 的 Safari 打開即可,建議再把它加入書籤。老師設定的密碼預設是 1234,第一次進入請馬上更改。</div>
+</section>
+</main>
+<script>
+const THEMES={"sky": {"label": "彩虹天空", "v": {"g0": "#9fdcff", "g1": "#d4f1ff", "g2": "#fff4c2", "g3": "#ffe0e9", "tx": "#4a3b2a", "bd": "#ffd166", "card": "#fff", "bg": "#fff7dd", "sh": "rgba(255,159,28,.35)", "pb": "#ffe08a", "ap1": "#ff9a62", "ap2": "#ff7a45", "s1": "#fff", "s2": "#ffeec2", "go1": "#5fd97a", "go2": "#2fb344", "mic1": "#ff8fb1", "mic2": "#f0568a", "ear1": "#6ec6ff", "ear2": "#3b9eff", "n1": "#fff", "n2": "#ffe3ee", "nb": "#ff9ec0", "ns": "rgba(240,86,138,.3)"}, "deco": ["☁️", "☁️", "🎈", "🌈", "🦋", "🌸", "⭐", "🐝"], "dark": false}, "forest": {"label": "森林", "v": {"g0": "#bfeab0", "g1": "#dff5c8", "g2": "#fff3c4", "g3": "#d6f0e0", "tx": "#2f4a2a", "bd": "#7cc47a", "card": "#fff", "bg": "#f3fbe8", "sh": "rgba(76,153,76,.35)", "pb": "#b8e3a0", "ap1": "#6fc450", "ap2": "#3f9a35", "s1": "#fff", "s2": "#e6f6d4", "go1": "#5fd9a0", "go2": "#1fa971", "mic1": "#ffb36b", "mic2": "#ee7d2b", "ear1": "#7fd1e8", "ear2": "#3aa6c9", "n1": "#fff", "n2": "#e6f6d4", "nb": "#7cc47a", "ns": "rgba(76,153,76,.3)"}, "deco": ["🌳", "🌲", "🍄", "🐿️", "🦉", "🍃", "🐞", "🦋"], "dark": false}, "ocean": {"label": "海洋", "v": {"g0": "#8fd3ff", "g1": "#bfe8ff", "g2": "#e0f7ff", "g3": "#d4f5f0", "tx": "#1f3b57", "bd": "#5bb5e8", "card": "#fff", "bg": "#eaf7ff", "sh": "rgba(40,130,200,.35)", "pb": "#a9dcf5", "ap1": "#4db3ee", "ap2": "#1f86cc", "s1": "#fff", "s2": "#d9f0fd", "go1": "#4fd1b5", "go2": "#1a9e86", "mic1": "#ff9f8a", "mic2": "#f0654d", "ear1": "#8ea8ff", "ear2": "#5a78e6", "n1": "#fff", "n2": "#d9f0fd", "nb": "#5bb5e8", "ns": "rgba(40,130,200,.3)"}, "deco": ["🐠", "🐳", "🐙", "🦀", "🐚", "🌊", "⭐", "🐬"], "dark": false}, "candy": {"label": "糖果", "v": {"g0": "#ffc2e0", "g1": "#ffdff0", "g2": "#fff0c8", "g3": "#e4d6ff", "tx": "#5a3050", "bd": "#ff8fc0", "card": "#fff", "bg": "#fff0f8", "sh": "rgba(240,86,138,.3)", "pb": "#ffc2de", "ap1": "#ff8fb1", "ap2": "#e8498a", "s1": "#fff", "s2": "#ffe0f0", "go1": "#b890ff", "go2": "#7c4de0", "mic1": "#ffb347", "mic2": "#f08a00", "ear1": "#6ec6ff", "ear2": "#3b9eff", "n1": "#fff", "n2": "#efe0ff", "nb": "#b890ff", "ns": "rgba(124,77,224,.3)"}, "deco": ["🍭", "🍬", "🧁", "🍩", "🎀", "🦄", "⭐", "🍓"], "dark": false}, "sunset": {"label": "夕陽", "v": {"g0": "#ffb88a", "g1": "#ffd9a8", "g2": "#fff0c0", "g3": "#ffd1dc", "tx": "#5a3320", "bd": "#ff9f4a", "card": "#fff", "bg": "#fff3e3", "sh": "rgba(230,120,40,.35)", "pb": "#ffd199", "ap1": "#ff9a62", "ap2": "#e8632a", "s1": "#fff", "s2": "#ffe5c4", "go1": "#7fd96a", "go2": "#3fa535", "mic1": "#ff7d9c", "mic2": "#d6336c", "ear1": "#7cc4ff", "ear2": "#3b8fe0", "n1": "#fff", "n2": "#ffe5c4", "nb": "#ff9f4a", "ns": "rgba(230,120,40,.3)"}, "deco": ["🌅", "☀️", "🦜", "🌴", "🐪", "🌻", "⭐", "🦋"], "dark": false}, "night": {"label": "夜空", "v": {"g0": "#1a1f45", "g1": "#262c5c", "g2": "#33397a", "g3": "#3d3a78", "tx": "#f3efe0", "bd": "#7c8cff", "card": "#2a2f5a", "bg": "#1e2350", "sh": "rgba(0,0,0,.35)", "pb": "#5a66c9", "ap1": "#8c9bff", "ap2": "#5566e6", "s1": "#3a4278", "s2": "#2f3566", "go1": "#4fd18b", "go2": "#1f9e5c", "mic1": "#ff7aa8", "mic2": "#d63a78", "ear1": "#5fc3ff", "ear2": "#2f8fe0", "n1": "#3a4278", "n2": "#2f3566", "nb": "#7c8cff", "ns": "rgba(0,0,0,.35)"}, "deco": ["🌙", "⭐", "🌟", "✨", "🪐", "🚀", "☁️", "🦉"], "dark": true}};
+const SCRIPT_SRC="// 看圖說話：Google 試算表後台（Google Apps Script）— 多班版\n// 使用方法：在 Google 試算表選「擴充功能」>「Apps Script」，把整份內容貼進去，儲存，\n// 再「部署」>「管理部署作業」>編輯（鉛筆）>版本選「新版本」>部署。網址不會改變。\n\nvar REC = '看圖說話紀錄';   // 所有班的原始紀錄（有「班別」欄）\nvar PRO = '學生進度';       // 各班進度分頁會叫「學生進度-班名」\nvar WORDS = '詞語';         // 共用詞語；各班可有「詞語-班名」專屬分頁\n\n// 班名清單：改成你們的班名，然後在編輯器選 setupClasses 按「執行」，會自動建立各班分頁。\nvar CLASSES = ['RFAM', 'RFPM', 'JKAM', 'JKPM', 'THAM', 'THPM'];\n\n// 如果這個 Apps Script 不是從試算表的「擴充功能」>「Apps Script」打開的，\n// 請把試算表網址中 /d/ 和 /edit 之間的那一串貼在下面的引號中間；否則留空。\nvar SHEET_ID = '';\n\nvar PRO_HEADER = ['名字', '練習次數', '說對次數', '說對率', '已掌握詞語數', '練習日數', '最近練習', '需要跟進的詞語', '已掌握的詞語'];\nvar DIFF = '詞語難度';   // 各班「詞語難度-班名」：全班哪些詞最多人說不對\n\nfunction ss_() {\n  return SHEET_ID ? SpreadsheetApp.openById(SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();\n}\n\nfunction sheet_(name, header) {\n  var ss = ss_();\n  var s = ss.getSheetByName(name);\n  if (!s) {\n    s = ss.insertSheet(name);\n    if (header) s.appendRow(header);\n  }\n  return s;\n}\n\n// 工作表名稱不能有 [ ] * ? : / \\ ，也順便去掉 .\nfunction clean_(c) {\n  return String(c || '').replace(/[\\[\\]\\*\\?:\\/\\\\\\.]/g, '').trim().slice(0, 20);\n}\n\n// 學生每說一次，網頁就把結果送到這裡\nfunction doPost(e) {\n  var lock = LockService.getScriptLock();\n  lock.waitLock(20000);\n  try {\n    var d = JSON.parse(e.postData.contents);\n    var name = String(d.n || '').slice(0, 20);\n    var word = String(d.w || '').slice(0, 20);\n    var cls = clean_(d.c);\n    var res = { great: '說得很好', near: '接近', no: '再試' }[d.r] || '再試';\n    var rec = sheet_(REC, ['時間', '名字', '詞語', '結果', '第幾次', '班別']);\n    if (String(rec.getRange(1, 6).getValue()) !== '班別') rec.getRange(1, 6).setValue('班別');\n    // 班別放在第 6 欄，這樣舊紀錄（沒有班別）不會錯位\n    rec.appendRow([new Date(d.d), name, word, res, Number(d.k) || 1, cls]);\n    updateProgress_(name, cls);\n  } finally {\n    lock.releaseLock();\n  }\n  return ContentService.createTextOutput('ok');\n}\n\n// 重新計算這位學生的進度，寫入該班的「學生進度-班名」工作表（沒有班別則寫入「學生進度」）\n// 「需要跟進的詞語」：同一個詞練習過 2 次或以上，而最近一次仍然沒說對（括號是未說對次數）\nfunction updateProgress_(name, cls) {\n  var tz = Session.getScriptTimeZone();\n  var rows = sheet_(REC).getDataRange().getValues();\n  var tries = 0, great = 0, words = {}, days = {}, last = 0, wd = {};\n  for (var i = 1; i < rows.length; i++) {\n    if (String(rows[i][1]) !== name) continue;\n    if (String(rows[i][5] || '') !== cls) continue;\n    tries++;\n    var t = new Date(rows[i][0]);\n    last = Math.max(last, t.getTime());\n    days[Utilities.formatDate(t, tz, 'yyyy-MM-dd')] = 1;\n    var w = String(rows[i][2]);\n    var x = wd[w] || (wd[w] = { t: 0, f: 0, l: '' });\n    x.t++;\n    x.l = rows[i][3];\n    if (rows[i][3] === '說得很好') { great++; words[w] = 1; } else { x.f++; }\n  }\n  var follow = [], mastered = [];\n  Object.keys(wd).forEach(function (w) {\n    var x = wd[w];\n    if (x.l === '說得很好') mastered.push(w);\n    else if (x.t >= 2) follow.push([w, x.f]);\n  });\n  follow.sort(function (a, b) { return b[1] - a[1]; });\n  var followText = follow.map(function (f) { return f[0] + '(' + f[1] + '次未對)'; }).join('、');\n  var p = sheet_(cls ? PRO + '-' + cls : PRO, PRO_HEADER);\n  p.getRange(1, 1, 1, PRO_HEADER.length).setValues([PRO_HEADER]);\n  var data = p.getDataRange().getValues(), row = -1;\n  for (var j = 1; j < data.length; j++) { if (String(data[j][0]) === name) { row = j + 1; break; } }\n  var vals = [name, tries, great, tries ? great / tries : 0, Object.keys(words).length, Object.keys(days).length, new Date(last), followText, mastered.join('、')];\n  if (row < 0) { p.appendRow(vals); row = p.getLastRow(); } else p.getRange(row, 1, 1, vals.length).setValues([vals]);\n  p.getRange(row, 8).setBackground(followText ? '#ffd6d6' : null);\n  p.getRange(2, 4, Math.max(p.getLastRow() - 1, 1), 1).setNumberFormat('0%');\n}\n\n// 用瀏覽器打開網址時，如果看到 ok，表示部署成功\nfunction doGet(e) {\n  var action = (e && e.parameter && e.parameter.action) || '';\n  if (action === 'words') {\n    var ss = ss_();\n    var cls = clean_(e.parameter.class);\n    // 先找該班專屬的「詞語-班名」，沒有就用共用的「詞語」\n    var s = cls ? ss.getSheetByName(WORDS + '-' + cls) : null;\n    if (!s) s = ss.getSheetByName(WORDS);\n    if (!s) {\n      // 第一次使用：自動建立「詞語」工作表，並放入幾個範例\n      s = ss.insertSheet(WORDS);\n      s.appendRow(['詞語', '表情符號（可留空，自動配圖）', '圖片網址（選填）']);\n      s.getRange(2, 1, 8, 2).setValues([['蘋果', '🍎'], ['香蕉', '🍌'], ['小貓', '🐱'], ['小狗', '🐶'], ['太陽', '☀️'], ['月亮', '🌙'], ['汽車', '🚗'], ['書包', '🎒']]);\n    }\n    var rows = s.getDataRange().getValues().slice(1), out = [];\n    for (var i = 0; i < rows.length && out.length < 200; i++) {\n      var w = String(rows[i][0] || '').trim();\n      if (!w) continue;\n      out.push([w, String(rows[i][1] || '').trim(), String(rows[i][2] || '').trim()]);\n    }\n    return ContentService.createTextOutput(JSON.stringify({ words: out })).setMimeType(ContentService.MimeType.JSON);\n  }\n  return ContentService.createTextOutput('ok');\n}\n\n// 一次建立各班分頁：「詞語-班名」（複製共用詞語）和「學生進度-班名」。可重複執行，不會覆蓋已有的分頁。\nfunction setupClasses() {\n  var ss = ss_();\n  sheet_(REC, ['時間', '名字', '詞語', '結果', '第幾次', '班別']);\n  var base = ss.getSheetByName(WORDS);\n  if (!base) {\n    doGet({ parameter: { action: 'words' } });\n    base = ss.getSheetByName(WORDS);\n  }\n  CLASSES.forEach(function (c) {\n    c = clean_(c);\n    if (!c) return;\n    if (!ss.getSheetByName(WORDS + '-' + c)) base.copyTo(ss).setName(WORDS + '-' + c);\n    sheet_(PRO + '-' + c, PRO_HEADER);\n    // 「詞語難度-班名」：用公式即時統計該班每個詞的未說對次數（由多到少）\n    var d = ss.getSheetByName(DIFF + '-' + c) || ss.insertSheet(DIFF + '-' + c);\n    var q = \"select C, count(C) where F='\" + c + \"' and D<>'說得很好' group by C order by count(C) desc label C '詞語', count(C) '未說對次數'\";\n    d.getRange(1, 1).setFormula('=IFERROR(QUERY(\\'' + REC + '\\'!A:F,\"' + q + '\",1),\"還沒有紀錄\")');\n  });\n}\n\n// 測試用：在編輯器上方選擇 testWrite，按「執行」。\n// 第一次會要求授權；成功的話，第一個班的進度分頁會多一筆名字叫「測試」的紀錄。\nfunction testWrite() {\n  doPost({ postData: { contents: JSON.stringify({ d: Date.now(), n: '測試', w: '編輯器測試', r: 'great', k: 1, c: CLASSES[0] }) } });\n}\n";
+const $=id=>document.getElementById(id);
+const ICONS=["🐼","🐻","🐰","🐱","🐶","🦊","🐸","🦁","🐯","🐥","🦄","🐠"];
+let theme="sky",icon="🐼";
+const okSheet=u=>/^https:\/\/script\.google\.com\/(a\/macros\/[\w.-]+\/|macros\/)s\/[\w-]+\/exec$/.test(u||"");
+const cleanC=x=>x.replace(/[\[\]*?:\/\\.]/g,"").trim().slice(0,20);
+const classes=()=>$("cls").value.split(/[,,、\s]+/).map(cleanC).filter(Boolean).slice(0,12);
+const first=s=>Array.from(s||"").slice(0,3).join("");
+
+function drawIcons(){const b=$("icons");b.innerHTML="";ICONS.forEach(e=>{const x=document.createElement("button");x.type="button";x.textContent=e;x.setAttribute("aria-pressed",e===icon&&!$("icc").value);x.setAttribute("aria-label","圖示 "+e);x.onclick=()=>{icon=e;$("icc").value="";drawIcons();preview()};b.appendChild(x)})}
+function drawThemes(){const b=$("themes");b.innerHTML="";Object.keys(THEMES).forEach(k=>{const t=THEMES[k],v=t.v;const x=document.createElement("button");x.type="button";x.className="th";x.setAttribute("aria-pressed",k===theme);
+  x.innerHTML='<span class="sw" style="background:linear-gradient(180deg,'+v.g0+','+v.g1+' 40%,'+v.g2+' 75%,'+v.g3+')"><i style="background:linear-gradient('+v.ap1+','+v.ap2+')"></i></span><b>'+t.label+'</b>';
+  x.onclick=()=>{theme=k;drawThemes();preview()};b.appendChild(x)})}
+function preview(){const t=THEMES[theme],v=t.v,ic=first($("icc").value)||icon;
+  $("pv").style.background="linear-gradient(180deg,"+v.g0+","+v.g1+" 40%,"+v.g2+" 75%,"+v.g3+")";
+  const c=$("pvc");c.style.background=v.card;c.style.border="5px solid "+v.bd;c.style.boxShadow="0 7px 0 "+v.sh;c.style.color=v.tx;
+  $("pvi").textContent=ic;$("pvt").textContent=$("ttl").value.trim()||"看圖說話";
+  $("pvb1").style.background="linear-gradient("+v.mic1+","+v.mic2+")";$("pvb2").style.background="linear-gradient("+v.go1+","+v.go2+")"}
+$("icc").oninput=()=>{drawIcons();preview()};$("ttl").oninput=preview;
+
+function codeText(){const c=classes();let s=SCRIPT_SRC;if(c.length)s=s.replace(/var CLASSES = \[[^\]]*\];/,"var CLASSES = ["+c.map(x=>"'"+x+"'").join(", ")+"];");return s}
+function refreshCode(){$("codeBox").value=codeText()}
+$("cls").oninput=refreshCode;
+$("copyCode").onclick=async()=>{const m=$("copyMsg");if(!classes().length){m.className="msg er";m.textContent="請先在第 1 步填寫班名,程式碼才會套用你的班別。";return}
+  const t=codeText();try{await navigator.clipboard.writeText(t);m.className="msg ok";m.textContent="✅ 已複製,可以貼到 Apps Script 了。"}catch(e){const b=$("codeBox");b.value=t;b.parentElement.open=true;b.select();m.className="msg er";m.textContent="無法自動複製,請在下方的方框裡全選並複製。"}};
+$("test").onclick=async()=>{const u=$("sheet").value.trim(),m=$("testMsg");
+  if(!okSheet(u)){m.className="msg er";m.textContent="網址格式不對,應該是 https://script.google.com/macros/s/…/exec";return}
+  m.className="msg";m.textContent="測試中…";
+  try{const r=await fetch(u+"?action=ping"),t=await r.text();if(t.trim().slice(0,2)==="ok"){m.className="msg ok";m.textContent="✅ 連線成功"}else{m.className="msg er";m.textContent="⚠️ 有回應但內容不對,請確認「誰可以存取」是「所有人」,並已部署新版本。"}}
+  catch(e){m.className="msg er";m.textContent="❌ 連不上。請確認網址正確,而且「誰可以存取」選了「所有人」。"}};
+
+function mk(params){const u=new URL("./",location.href);Object.keys(params).forEach(k=>{if(params[k])u.searchParams.set(k,params[k])});return u.toString()}
+$("gen").onclick=()=>{const out=$("out");out.innerHTML="";const sh=$("sheet").value.trim();
+  if(sh&&!okSheet(sh)){out.innerHTML='<div class="msg er">試算表網址格式不對,請檢查第 2 步。</div>';return}
+  const c=classes(),base={theme:theme==="sky"?"":theme,title:$("ttl").value.trim(),icon:first($("icc").value)||(icon==="🐼"?"":icon),sheet:sh};
+  const list=c.length?c.map(x=>[x,mk(Object.assign({class:x},base))]):[["全部",mk(base)]];
+  if(c.length>1)list.push(["選班頁",mk(Object.assign({classes:c.join(",")},base))]);
+  list.forEach(([n,u])=>{const d=document.createElement("div");d.className="link";
+    d.innerHTML='<span class="nm"></span><input type="text" readonly><div class="bt"><button type="button" class="cp">📋 複製</button><button type="button" class="sec op">🔗 開啟試試</button></div>';
+    d.querySelector(".nm").textContent=n;const i=d.querySelector("input");i.value=u;i.onfocus=()=>i.select();
+    d.querySelector(".op").onclick=()=>window.open(u,"_blank","noopener");
+    d.querySelector(".cp").onclick=async e=>{try{await navigator.clipboard.writeText(u);e.target.textContent="✅ 已複製"}catch(x){i.select();e.target.textContent="請按 Ctrl/⌘+C"}setTimeout(()=>{e.target.textContent="📋 複製"},1800)};
+    out.appendChild(d)})};
+drawIcons();drawThemes();preview();refreshCode();
+</script></body></html>
