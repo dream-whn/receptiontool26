@@ -129,7 +129,9 @@ function load(){try{const s=localStorage.getItem(KEY);words=s?JSON.parse(s):DEF.
 function save(){try{localStorage.setItem(KEY,JSON.stringify(words))}catch(e){alert("儲存空間已滿,這次的更改沒有保存。請刪除一些不用的詞語或照片")}}
 function draw(el,it){el.innerHTML="";if(it.img){const i=new Image();i.src=it.img;el.appendChild(i)}else el.textContent=it.e||"❓"}
 function show(){stopSounds();tries=0;$("myrec").style.display="none";$("fb").textContent="";$("fb").className="fb";$("heard").textContent="";
-  let n;do{n=words[Math.floor(Math.random()*words.length)]}while(words.length>1&&cur&&n===cur);cur=n;
+  const pool=words.filter(x=>!x.np);
+  if(!pool.length){cur=null;$("pic").textContent="🖼️";$("heard").textContent="老師還沒有為詞語加上圖片";return}
+  let n;do{n=pool[Math.floor(Math.random()*pool.length)]}while(pool.length>1&&cur&&n===cur);cur=n;
   draw($("pic"),cur);}
 function speak(t){try{const u=new SpeechSynthesisUtterance(t);u.lang="zh-CN";u.rate=.8;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
 let AC=null,lastRes=0,ma=null,cm=null;
@@ -138,7 +140,7 @@ function unlockAudio(){try{const c=ac();if(c&&c.state==="suspended")c.resume()}c
 function stopSounds(){try{speechSynthesis.cancel()}catch(e){}try{if(ma)ma.pause()}catch(e){}try{if(cm)cm.pause()}catch(e){}}
 function beep(ok){try{const c=ac();if(!c||c.state!=="running")return;const t0=c.currentTime;(ok?[660,880,1100]:[300,220]).forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain(),st=t0+i*.15;o.frequency.value=f;o.connect(g);g.connect(c.destination);g.gain.setValueAtTime(.15,st);g.gain.exponentialRampToValueAtTime(.001,st+.14);o.start(st);o.stop(st+.15)})}catch(e){}}
 const norm=s=>(s||"").replace(/[\s,。,.!?!?、]/g,"");
-function result(ok,text){const now=Date.now();if(now-lastRes<1500)return;lastRes=now;logAttempt(ok?"great":"no");const f=$("fb");
+function result(ok,text){if(!cur)return;const now=Date.now();if(now-lastRes<1500)return;lastRes=now;logAttempt(ok?"great":"no");const f=$("fb");
   if(ok){burst();f.textContent="⭕";f.className="fb ok";stars++;$("stars").textContent="⭐ "+stars;speak("太棒了")}
   else{f.textContent="❌";f.className="fb no";}
   beep(ok)}
@@ -156,7 +158,7 @@ function judge(alts){
 let mr=null,chunks=[],aurl=null,stream=null;
 function stopRec(){try{if(mr&&mr.state==="recording")mr.stop()}catch(e){}}
 $("mic").onclick=async()=>{
-  if(!SR)return;
+  if(!SR||!cur)return;
   if(listening){rec&&rec.stop();return}
   unlockAudio();stopSounds();
   $("myrec").style.display="none";if(aurl){URL.revokeObjectURL(aurl);aurl=null}chunks=[];
@@ -177,19 +179,21 @@ $("mic").onclick=async()=>{
 };
 $("myrec").onclick=()=>{if(!aurl)return;stopSounds();ma=new Audio(aurl);ma.play().catch(()=>{})};
 function playModel(it){stopSounds();if(it&&it.a){try{cm=new Audio(it.a);cm.play().catch(()=>{});return}catch(e){}}speak(it.w)}
-$("hear").onclick=()=>playModel(cur);
+$("hear").onclick=()=>{if(cur)playModel(cur)};
 $("next").onclick=show;
 // admin
-function render(){const L=$("list");L.innerHTML="<b>詞語列表("+words.length+")</b>";
+function render(){const L=$("list");{const nn=words.filter(x=>x.np).length;L.innerHTML="<b>詞語列表("+words.length+")</b>"+(nn?'<div class="small" style="margin:6px 0">⚠️ 有 '+nn+' 個詞語還沒有圖片:學生暫時不會練習這些詞。請在試算表第 2 欄填表情符號,或在下面按 🖼️ 加照片、😀 輸入表情符號。</div>':"")}
   words.forEach((it,i)=>{const d=document.createElement("div");d.className="item";const e=document.createElement("div");e.className="e";draw(e,it);
-    const t=document.createElement("span");t.className="t";t.textContent=it.w+(it.p?"  "+it.p:"");
+    const t=document.createElement("span");t.className="t";t.textContent=it.w+(it.p?"  "+it.p:"")+(it.np?"  ⚠️ 未有圖片":"");if(it.np)d.style.background="rgba(255,200,0,.2)";
     const b=document.createElement("button");b.className="sec";b.textContent="🗑️";b.onclick=()=>{words.splice(i,1);save();render()};
     const b2=document.createElement("button");b2.className="sec";b2.textContent="✏️";b2.onclick=()=>{const nw=prompt("詞語",it.w);if(nw===null)return;const w2=nw.trim()||it.w;const np=prompt("拼音(留空則自動產生)",it.w===w2?(it.p||py(w2)):py(w2));if(np===null)return;it.w=w2;it.p=np.trim()||py(w2);save();render()};
     const rb=document.createElement("button");rb.className="sec";rb.textContent=it.a?"🎙️✓":"🎙️";rb.title="錄標準讀音";rb.onclick=()=>recModel(it,rb);
     const pb=document.createElement("button");pb.className="sec";pb.textContent="▶️";pb.style.display=it.a?"":"none";pb.onclick=()=>playModel(it);
     const ib=document.createElement("button");ib.className="sec";ib.textContent="🖼️";ib.title="更換成自己的照片";
-    ib.onclick=()=>{const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.onchange=()=>{const f=inp.files[0];if(f)resizeFile(f,u=>{it.img=u;save();render()})};inp.click()};
-    d.append(e,t,rb,pb,ib,b2,b);L.appendChild(d)})}
+    ib.onclick=()=>{const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.onchange=()=>{const f=inp.files[0];if(f)resizeFile(f,u=>{it.img=u;it.np=false;it.e=undefined;save();render()})};inp.click()};
+    const eb=document.createElement("button");eb.className="sec";eb.textContent="😀";eb.title="輸入表情符號作為圖片";
+    eb.onclick=()=>{const v=(prompt("請輸入一個表情符號作為「"+it.w+"」的圖片(例如 🍎):",it.le||it.e||"")||"").trim();if(!v)return;it.le=v;it.e=v;it.img=undefined;it.np=false;save();render()};
+    d.append(e,t,rb,pb,ib,eb,b2,b);L.appendChild(d)})}
 async function recModel(it,btn){
   if(btn._stop){btn._stop();return}
   try{const st=await navigator.mediaDevices.getUserMedia({audio:true}),ch=[],m=new MediaRecorder(st,{audioBitsPerSecond:24000});
@@ -314,16 +318,15 @@ function renderNm(){
   const note=document.createElement("div");note.className="small";note.style.marginTop="8px";
   note.textContent="名字按鈕只存在這部裝置。已經記錄在試算表的名字,要在試算表的「看圖說話」選單修改。";b.appendChild(note)}
 const WK="pth_sheetwords_v1"+SFX;
-function emojiFor(w){if(EMOJI[w])return EMOJI[w];const k=Object.keys(EMOJI).find(k=>w.length>1&&(w.includes(k)||k.includes(w)));return k?EMOJI[k]:""}
+function emojiFor(w){return EMOJI[w]||""}
 function localWords(){try{const x=localStorage.getItem(KEY);return x?JSON.parse(x):[]}catch(e){return[]}}
 function applySheet(list){
   const by={};localWords().forEach(x=>{if(x&&x.w)by[x.w]=x});
   const out=[];
   list.forEach(r=>{const w=String(r[0]||"").trim();if(!w)return;
     const l=by[w]||{},li=(l.img&&String(l.img).indexOf("data:")===0)?l.img:null;
-    const e=String(r[1]||"").trim()||emojiFor(w),url=String(r[2]||"").trim(),img=li||url||undefined;
-    if(!img&&!e)return;
-    out.push({w:w,p:py(w),e:img?undefined:e,img:img,a:l.a})});
+    const e=String(r[1]||"").trim()||emojiFor(w)||(l.le||""),url=String(r[2]||"").trim(),img=li||url||undefined;
+    out.push({w:w,p:py(w),e:img?undefined:(e||undefined),img:img,a:l.a,le:l.le,np:!(img||e)})});
   if(out.length){words=out;return true}return false}
 async function loadSheetWords(){
   if(!SHEET_URL)return;
