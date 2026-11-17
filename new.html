@@ -93,6 +93,7 @@ button.big{font-size:1.8rem;padding:18px 44px;background:linear-gradient(var(--g
     <button id="add">➕ 加入</button>
   </div>
   <div class="card" id="list"></div>
+  <div class="card" id="nmgr"></div>
   <div class="card" id="stu"></div>
   <div class="card" id="diag"></div>
   <div class="small">想用自己的照片:新增詞語時按「選擇檔案」上傳,或在下面列表按詞語旁的 🖼️ 更換圖片。照片會自動縮小。<br>詞語、照片和老師錄音儲存在此裝置的瀏覽器內,請在同一部平板或電腦上設定及使用。🎙️ 按一下開始錄標準讀音(最長 4 秒),再按一下停止。</div>
@@ -201,7 +202,7 @@ $("add").onclick=()=>{const w=$("nw").value.trim();if(!w){alert("請輸入詞語
   $("nw").value=$("np").value=$("ne").value="";$("np").dataset.m="";$("nf").value="";upImg=null;prev();render()};
 $("reset").onclick=()=>{if(confirm("還原預設詞語?")){words=DEF.slice();save();render()}};
 $("toAdmin2").onclick=()=>$("toAdmin").onclick();
-$("toAdmin").onclick=()=>askPin("請輸入老師密碼",v=>{if(v===getPin()){$("play").style.display="none";$("who").style.display="none";$("clsPick").style.display="none";$("admin").style.display="block";render();renderStu();renderDiag()}else alert("密碼不正確")});
+$("toAdmin").onclick=()=>askPin("請輸入老師密碼",v=>{if(v===getPin()){$("play").style.display="none";$("who").style.display="none";$("clsPick").style.display="none";$("admin").style.display="block";render();renderNm();renderStu();renderDiag()}else alert("密碼不正確")});
 $("chpw").onclick=()=>askPin("輸入新密碼",v=>{if(!v)return;try{localStorage.setItem(PK,v);alert("密碼已更新")}catch(e){alert("無法儲存密碼")}});
 $("nw").oninput=()=>{const n=$("np");if(!n.dataset.m)n.value=py($("nw").value.trim())};
 $("np").oninput=()=>{$("np").dataset.m="1"};
@@ -227,7 +228,7 @@ function burst(){const E=["⭐","🎉","✨","🌟","💖","🎈"];for(let i=0;i
 function startWho(){let last="";try{last=localStorage.getItem(NAMEK)||""}catch(e){}$("pname").value=last;renderNames();$("who").style.display="";$("play").style.display="none";setTimeout(()=>$("pname").focus(),50)}
 $("pgo").onclick=()=>{const n=$("pname").value.trim();if(!n){$("pname").focus();return}
   who=n;try{localStorage.setItem(NAMEK,n)}catch(e){}
-  {const NL=readJ(NMK).filter(x=>x!==n);NL.unshift(n);writeJ(NMK,NL.slice(0,24))}
+  {const NL=readJ(NMK).filter(x=>x!==n);NL.unshift(n);writeJ(NMK,NL.slice(0,60))}
   $("who2").textContent="👤 "+n+(CLS?"　🏫 "+CLS:"");$("who").style.display="none";$("play").style.display="block";
   stars=0;$("stars").textContent="⭐ 0";cur=null;show()};
 $("pname").onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing)$("pgo").click()};
@@ -269,6 +270,40 @@ function renderStu(){
   const b3=document.createElement("button");b3.className="sec";b3.textContent="🧒 清除名字按鈕";b3.onclick=()=>{writeJ(NMK,[]);alert("已清除")};
   box.append(b1,b2,b3);
 }
+let nmCls=null;
+const nmKey=c=>"pth_names_v1"+(c?"_"+c:""),logKey=c=>"pth_log_v1"+(c?"_"+c:"");
+function renderNm(){
+  const b=$("nmgr");b.innerHTML="<b>👤 名字管理</b>";
+  const opts=[];[CLS].concat(PICK).forEach(c=>{if(c&&opts.indexOf(c)<0)opts.push(c)});if(!opts.length)opts.push("");
+  if(nmCls===null||opts.indexOf(nmCls)<0){let last="";try{last=localStorage.getItem("pth_lastcls")||""}catch(e){}nmCls=CLS||(opts.indexOf(last)>=0?last:opts[0])}
+  const row=document.createElement("div");row.className="row";row.style.margin="8px 0";
+  if(opts.length>1||opts[0]){const sel=document.createElement("select");sel.style.cssText="font:inherit;padding:8px;border-radius:10px;border:2px solid var(--bd);background:var(--bg);color:var(--tx)";
+    opts.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent="🏫 "+(c||"未分班");if(c===nmCls)o.selected=true;sel.appendChild(o)});
+    sel.onchange=()=>{nmCls=sel.value;renderNm()};row.appendChild(sel)}
+  b.appendChild(row);
+  const names=readJ(nmKey(nmCls));
+  if(!names.length){const e=document.createElement("div");e.className="small";e.textContent="這個班在這部裝置上還沒有名字按鈕。可以在下面先輸入全班名字,學生就只要點名字,不用自己打字。";b.appendChild(e)}
+  names.forEach((n,i)=>{const d=document.createElement("div");d.className="item";
+    const t=document.createElement("span");t.className="t";t.textContent="🧒 "+n;
+    const e=document.createElement("button");e.className="sec";e.textContent="✏️";e.title="修改名字";
+    e.onclick=()=>{const v=prompt("把「"+n+"」改成:",n);if(v===null)return;const nn=v.trim().slice(0,20);if(!nn||nn===n)return;
+      let L=readJ(nmKey(nmCls));L=L.filter((x,j)=>!(x===nn&&j!==i));const k=L.indexOf(n);if(k>=0)L[k]=nn;writeJ(nmKey(nmCls),L);
+      const G=readJ(logKey(nmCls));G.forEach(a=>{if(a.n===n)a.n=nn});writeJ(logKey(nmCls),G);
+      try{if(localStorage.getItem("pth_name_v1"+(nmCls?"_"+nmCls:""))===n)localStorage.setItem("pth_name_v1"+(nmCls?"_"+nmCls:""),nn)}catch(x){}
+      renderNm();renderStu();
+      if(SHEET_URL)alert("已修改這部裝置上的名字按鈕。\n\n試算表裡已經記錄的舊名字不會自動改變,請在試算表上方「看圖說話」選單 → 「修改學生名字」。")};
+    const x=document.createElement("button");x.className="sec";x.textContent="🗑️";x.title="刪除這個名字按鈕";
+    x.onclick=()=>{if(!confirm("刪除名字按鈕「"+n+"」?(只是移除按鈕,試算表的紀錄不受影響)"))return;const L=readJ(nmKey(nmCls));L.splice(i,1);writeJ(nmKey(nmCls),L);renderNm()};
+    d.append(t,e,x);b.appendChild(d)});
+  const add=document.createElement("div");add.className="row";add.style.marginTop="10px";
+  const inp=document.createElement("input");inp.type="text";inp.placeholder="輸入名字(可一次輸入多個,用逗號分開)";inp.maxLength=200;inp.autocomplete="off";
+  const ab=document.createElement("button");ab.textContent="➕ 加入名字";
+  ab.onclick=()=>{const add=inp.value.split(/[,,、\n]+/).map(x=>x.trim().slice(0,20)).filter(Boolean);if(!add.length)return;
+    const L=readJ(nmKey(nmCls));add.forEach(n=>{if(L.indexOf(n)<0)L.push(n)});writeJ(nmKey(nmCls),L.slice(0,60));renderNm()};
+  inp.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing)ab.click()};
+  add.append(inp,ab);b.appendChild(add);
+  const note=document.createElement("div");note.className="small";note.style.marginTop="8px";
+  note.textContent="名字按鈕只存在這部裝置。已經記錄在試算表的名字,要在試算表的「看圖說話」選單修改。";b.appendChild(note)}
 const WK="pth_sheetwords_v1"+SFX;
 function emojiFor(w){if(EMOJI[w])return EMOJI[w];const k=Object.keys(EMOJI).find(k=>w.length>1&&(w.includes(k)||k.includes(w)));return k?EMOJI[k]:""}
 function localWords(){try{const x=localStorage.getItem(KEY);return x?JSON.parse(x):[]}catch(e){return[]}}
