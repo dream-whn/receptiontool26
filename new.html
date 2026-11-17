@@ -134,7 +134,7 @@ function show(){stopSounds();tries=0;$("myrec").style.display="none";$("fb").tex
   let n;do{n=pool[Math.floor(Math.random()*pool.length)]}while(pool.length>1&&cur&&n===cur);cur=n;
   draw($("pic"),cur);}
 function speak(t){try{const u=new SpeechSynthesisUtterance(t);u.lang="zh-CN";u.rate=.8;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
-let lastRes=0,ma=null,cm=null;
+let lastRes=0,ma=null,cm=null,lastHeard="";
 function stopSounds(){try{speechSynthesis.cancel()}catch(e){}try{if(ma)ma.pause()}catch(e){}try{if(cm)cm.pause()}catch(e){}}
 function beep(ok){try{const c=new (window.AudioContext||window.webkitAudioContext)(),t0=c.currentTime;(ok?[660,880,1100]:[300,220]).forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain(),st=t0+i*.15;o.frequency.value=f;o.connect(g);g.connect(c.destination);g.gain.setValueAtTime(.15,st);g.gain.exponentialRampToValueAtTime(.001,st+.14);o.start(st);o.stop(st+.15)});setTimeout(()=>{try{c.close()}catch(e){}},1200)}catch(e){}}
 const norm=s=>(s||"").replace(/[\s,。,.!?!?、]/g,"");
@@ -153,6 +153,7 @@ function seqHas(aa,ta,loose){if(!aa||!ta||!ta.length)return false;
   for(let i=0;i+ta.length<=aa.length;i++){let ok=true;for(let j=0;j<ta.length;j++){const x=aa[i+j],t=ta[j];if(!(x===t||(loose&&!hasT(t)&&stripT(x)===stripT(t)))){ok=false;break}}if(ok)return true}
   return false}
 function judge(alts){
+  lastHeard=(window.pinyinPro?"":"[拼音庫未載入] ")+alts.slice(0,3).join(" / ").slice(0,80);
   const dbgOn=(()=>{try{return localStorage.getItem("pth_dbg")==="1"}catch(e){return false}})()||Q.get("debug");
   const dbg=dbgOn?"\n聽到:"+alts.join(" / ")+"\n目標:"+cur.w+((pyA(cur.w,1)||[]).length?"("+pyA(cur.w,1).join(" ")+")":"")+"　拼音庫:"+(window.pinyinPro?"已載入":"未載入"):"";if(dbg)$("heard").textContent=dbg;
   const tw=norm(cur.w),tA1=pyA(cur.w,1),tA0=pyA(cur.w,0);let r="no";
@@ -230,7 +231,7 @@ function readJ(k){try{return JSON.parse(localStorage.getItem(k)||"[]")}catch(e){
 function writeJ(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 function logAttempt(r){
   if(!cur||!who)return;tries++;
-  const a={d:Date.now(),n:who,w:cur.w,r:r,k:tries,c:CLS,s:SHEET_URL};
+  const a={d:Date.now(),n:who,w:cur.w,r:r,k:tries,c:CLS,s:SHEET_URL,h:lastHeard};lastHeard="";
   const L=readJ(LOGK);L.push(a);writeJ(LOGK,L.slice(-3000));
   if(SHEET_URL){const q=readJ(QK);q.push(a);writeJ(QK,q);flush()}
 }
