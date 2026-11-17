@@ -73,7 +73,7 @@ button.big{font-size:1.8rem;padding:18px 44px;background:linear-gradient(var(--g
         <button class="sec" id="hear">🔊</button>
         <button class="sec" id="myrec" style="display:none">▶️ 我的錄音</button>
     <div class="fb" id="fb"></div>
-    <div class="small" id="heard"></div>
+    <div class="small" id="heard" style="white-space:pre-line"></div>
   </div>
   <button class="big" id="mic">🎤</button>
   <button class="sec" id="next">➡️</button>
@@ -101,7 +101,7 @@ button.big{font-size:1.8rem;padding:18px 44px;background:linear-gradient(var(--g
 </div>
 <div id="modal"><div class="box"><div id="mtitle"></div><input type="password" id="mpw" autocomplete="off"><button id="mok">確定</button><button class="sec" id="mcancel">取消</button></div></div>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.2/dist/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.2/dist/index.js" onerror="var s=document.createElement('script');s.src='https://unpkg.com/pinyin-pro@3.18.2/dist/index.js';document.head.appendChild(s)"></script>
 <script>
 const EMOJI={蘋果:"🍎",香蕉:"🍌",西瓜:"🍉",葡萄:"🍇",橙:"🍊",橙子:"🍊",草莓:"🍓",梨:"🍐",桃:"🍑",檸檬:"🍋",菠蘿:"🍍",番茄:"🍅",胡蘿蔔:"🥕",玉米:"🌽",麵包:"🍞",雞蛋:"🥚",牛奶:"🥛",米飯:"🍚",麵條:"🍜",餅乾:"🍪",蛋糕:"🎂",雪糕:"🍦",糖果:"🍬",水:"💧",貓:"🐱",小貓:"🐱",狗:"🐶",小狗:"🐶",兔子:"🐰",老虎:"🐯",獅子:"🦁",大象:"🐘",猴子:"🐵",熊貓:"🐼",小熊:"🐻",豬:"🐷",小豬:"🐷",牛:"🐮",馬:"🐴",羊:"🐑",雞:"🐔",鴨子:"🦆",小鳥:"🐦",魚:"🐟",青蛙:"🐸",蛇:"🐍",烏龜:"🐢",蝴蝶:"🦋",蜜蜂:"🐝",螞蟻:"🐜",太陽:"☀️",月亮:"🌙",星星:"⭐",雲:"☁️",雨:"🌧️",雪:"❄️",彩虹:"🌈",火:"🔥",花:"🌸",樹:"🌳",書:"📖",筆:"✏️",書包:"🎒",汽車:"🚗",巴士:"🚌",火車:"🚆",飛機:"✈️",船:"🚢",單車:"🚲",房子:"🏠",學校:"🏫",手:"✋",眼睛:"👁️",耳朵:"👂",鼻子:"👃",嘴巴:"👄",帽子:"🧢",鞋子:"👟",衣服:"👕",傘:"☂️",球:"⚽",氣球:"🎈",禮物:"🎁",鐘:"⏰",電話:"📞",電視:"📺",椅子:"🪑",床:"🛏️",杯子:"🥤",剪刀:"✂️",鑰匙:"🔑",爸爸:"👨",媽媽:"👩",寶寶:"👶",老師:"🧑‍🏫"};
 const DEF=[["蘋果","píng guǒ"],["香蕉","xiāng jiāo"],["小貓","xiǎo māo"],["小狗","xiǎo gǒu"],["太陽","tài yáng"],["月亮","yuè liang"],["汽車","qì chē"],["書包","shū bāo"]].map(([w,p])=>({w,p,e:EMOJI[w]}));
@@ -147,10 +147,16 @@ if(!SR){$("note").textContent="此瀏覽器不支援語音辨識,請用 Chrome �
 function manual(){const d=document.createElement("div");d.id="mj";d.innerHTML='<button onclick="result(true)">⭕</button><button class="sec" onclick="result(false)">❌</button>';$("note").appendChild(d)}
 if(!SR)manual();
 const pyN=(t,tone)=>{try{return pinyinPro.pinyin(norm(t),{toneType:tone?"symbol":"none",type:"array"}).join("").replace(/\s/g,"")}catch(e){return norm(t)}};
+const pyA=(t,tone)=>{try{const a=pinyinPro.pinyin(norm(t),{toneType:tone?"symbol":"none",type:"array"});return Array.isArray(a)?a.map(x=>String(x).replace(/\s/g,"")):null}catch(e){return null}};
+const hasT=x=>/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/.test(x),stripT=x=>x.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function seqHas(aa,ta,loose){if(!aa||!ta||!ta.length)return false;
+  for(let i=0;i+ta.length<=aa.length;i++){let ok=true;for(let j=0;j<ta.length;j++){const x=aa[i+j],t=ta[j];if(!(x===t||(loose&&!hasT(t)&&stripT(x)===stripT(t)))){ok=false;break}}if(ok)return true}
+  return false}
 function judge(alts){
-  const dbg=Q.get("debug")?"\n聽到:"+alts.join(" / "):"";if(dbg)$("heard").textContent=dbg;
-  const tw=norm(cur.w),tp=pyN(cur.w,0),tt=pyN(cur.w,1);let r="no";
-  alts.forEach(a=>{if(norm(a).includes(tw)||pyN(a,1).includes(tt))r="great";else if(r!=="great"&&pyN(a,0).includes(tp))r="near"});
+  const dbgOn=(()=>{try{return localStorage.getItem("pth_dbg")==="1"}catch(e){return false}})()||Q.get("debug");
+  const dbg=dbgOn?"\n聽到:"+alts.join(" / ")+"\n目標:"+cur.w+((pyA(cur.w,1)||[]).length?"("+pyA(cur.w,1).join(" ")+")":"")+"　拼音庫:"+(window.pinyinPro?"已載入":"未載入"):"";if(dbg)$("heard").textContent=dbg;
+  const tw=norm(cur.w),tA1=pyA(cur.w,1),tA0=pyA(cur.w,0);let r="no";
+  alts.forEach(a=>{if(norm(a).includes(tw)||seqHas(pyA(a,1),tA1,true))r="great";else if(r!=="great"&&seqHas(pyA(a,0),tA0,false))r="near"});
   if(r==="great")result(true);
   else if(r==="near"){const nw=Date.now();if(nw-lastRes<1500)return;lastRes=nw;logAttempt("near");$("fb").textContent="👍";$("fb").className="fb";$("heard").textContent="很接近了!注意讀音和聲調,再試一次"+dbg}
   else result(false)}
@@ -249,6 +255,10 @@ const RN={great:"說得很好",near:"接近",no:"再試"};
 const fmt=d=>new Date(d).toLocaleString("zh-HK",{hour12:false});
 function renderDiag(){
   const d=$("diag"),q=readJ(QK);d.innerHTML="<b>試算表連線</b>";
+  {const lb=document.createElement("label");lb.className="small";lb.style.cssText="display:block;margin:8px 0";const cb=document.createElement("input");cb.type="checkbox";
+   try{cb.checked=localStorage.getItem("pth_dbg")==="1"}catch(e){}
+   cb.onchange=()=>{try{localStorage.setItem("pth_dbg",cb.checked?"1":"0")}catch(e){}};
+   lb.append(cb," 🔍 顯示辨識結果(診斷用:學生畫面會多出小字,顯示電腦聽到什麼)");d.appendChild(lb)}
   const p=document.createElement("div");p.className="small";
   p.textContent=(CLS?("班別:"+CLS+"。"):"⚠️ 此連結沒有指定班別,紀錄會記在「未分班」。請改用「網址?class=班名」的連結。")+(SHEET_URL?("已設定試算表網址。待傳送的紀錄:"+q.length+" 筆"):"尚未設定試算表網址(紀錄只存在此裝置)");d.appendChild(p);
   if(!SHEET_URL)return;
