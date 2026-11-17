@@ -128,13 +128,17 @@ const $=id=>document.getElementById(id);
 function load(){try{const s=localStorage.getItem(KEY);words=s?JSON.parse(s):DEF.slice()}catch(e){words=DEF.slice()}if(!words.length)words=DEF.slice()}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(words))}catch(e){alert("儲存空間已滿,這次的更改沒有保存。請刪除一些不用的詞語或照片")}}
 function draw(el,it){el.innerHTML="";if(it.img){const i=new Image();i.src=it.img;el.appendChild(i)}else el.textContent=it.e||"❓"}
-function show(){tries=0;$("myrec").style.display="none";$("fb").textContent="";$("fb").className="fb";$("heard").textContent="";
+function show(){stopSounds();tries=0;$("myrec").style.display="none";$("fb").textContent="";$("fb").className="fb";$("heard").textContent="";
   let n;do{n=words[Math.floor(Math.random()*words.length)]}while(words.length>1&&cur&&n===cur);cur=n;
   draw($("pic"),cur);}
 function speak(t){try{const u=new SpeechSynthesisUtterance(t);u.lang="zh-CN";u.rate=.8;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
-function beep(ok){try{const c=new (window.AudioContext||window.webkitAudioContext)();(ok?[660,880,1100]:[300,220]).forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;o.connect(g);g.connect(c.destination);g.gain.value=.15;o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.14)})}catch(e){}}
+let AC=null,lastRes=0,ma=null,cm=null;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}return AC}
+function unlockAudio(){try{const c=ac();if(c&&c.state==="suspended")c.resume()}catch(e){}}
+function stopSounds(){try{speechSynthesis.cancel()}catch(e){}try{if(ma)ma.pause()}catch(e){}try{if(cm)cm.pause()}catch(e){}}
+function beep(ok){try{const c=ac();if(!c||c.state!=="running")return;const t0=c.currentTime;(ok?[660,880,1100]:[300,220]).forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain(),st=t0+i*.15;o.frequency.value=f;o.connect(g);g.connect(c.destination);g.gain.setValueAtTime(.15,st);g.gain.exponentialRampToValueAtTime(.001,st+.14);o.start(st);o.stop(st+.15)})}catch(e){}}
 const norm=s=>(s||"").replace(/[\s,。,.!?!?、]/g,"");
-function result(ok,text){logAttempt(ok?"great":"no");const f=$("fb");
+function result(ok,text){const now=Date.now();if(now-lastRes<1500)return;lastRes=now;logAttempt(ok?"great":"no");const f=$("fb");
   if(ok){burst();f.textContent="⭕";f.className="fb ok";stars++;$("stars").textContent="⭐ "+stars;speak("太棒了")}
   else{f.textContent="❌";f.className="fb no";}
   beep(ok)}
@@ -147,13 +151,14 @@ function judge(alts){
   const tw=norm(cur.w),tp=pyN(cur.w,0),tt=pyN(cur.w,1);let r="no";
   alts.forEach(a=>{if(norm(a).includes(tw)||pyN(a,1).includes(tt))r="great";else if(r!=="great"&&pyN(a,0).includes(tp))r="near"});
   if(r==="great")result(true);
-  else if(r==="near"){logAttempt("near");$("fb").textContent="👍";$("fb").className="fb";$("heard").textContent="很接近了!注意讀音和聲調,再試一次"}
+  else if(r==="near"){const nw=Date.now();if(nw-lastRes<1500)return;lastRes=nw;logAttempt("near");$("fb").textContent="👍";$("fb").className="fb";$("heard").textContent="很接近了!注意讀音和聲調,再試一次"}
   else result(false)}
 let mr=null,chunks=[],aurl=null,stream=null;
 function stopRec(){try{if(mr&&mr.state==="recording")mr.stop()}catch(e){}}
 $("mic").onclick=async()=>{
   if(!SR)return;
   if(listening){rec&&rec.stop();return}
+  unlockAudio();stopSounds();
   $("myrec").style.display="none";if(aurl){URL.revokeObjectURL(aurl);aurl=null}chunks=[];
   try{stream=await navigator.mediaDevices.getUserMedia({audio:true});mr=new MediaRecorder(stream);
     mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
@@ -161,13 +166,17 @@ $("mic").onclick=async()=>{
     mr.start()}catch(e){mr=null}
   rec=new SR();rec.lang="zh-CN";rec.interimResults=false;rec.maxAlternatives=5;
   rec.onstart=()=>{listening=true;$("mic").textContent="🛑";$("mic").classList.add("rec");$("fb").textContent="👂";$("fb").className="fb"};
-  rec.onend=()=>{listening=false;$("mic").textContent="🎤";$("mic").classList.remove("rec");stopRec()};
-  rec.onerror=e=>{$("fb").textContent="";$("heard").textContent=e.error==="not-allowed"?"請允許使用麥克風":"沒聽清楚,再說一次"};
-  rec.onresult=e=>{judge([...e.results[0]].map(a=>a.transcript))};
+  let pending=null,done=false;
+  const finish=()=>{if(done)return;done=true;listening=false;$("mic").textContent="🎤";$("mic").classList.remove("rec");stopRec();
+    const a=pending;pending=null;rec.onresult=rec.onend=rec.onerror=null;
+    if(a)setTimeout(()=>judge(a),350)};
+  rec.onend=finish;
+  rec.onerror=e=>{if(e.error==="no-speech"||e.error==="aborted"||e.error==="not-allowed"||e.error==="audio-capture"||e.error==="network")finish();$("fb").textContent="";$("heard").textContent=e.error==="not-allowed"?"請允許使用麥克風":"沒聽清楚,再說一次"};
+  rec.onresult=e=>{if(pending||done)return;pending=[...e.results[0]].map(a=>a.transcript);try{rec.stop()}catch(x){}setTimeout(finish,1500)};
   try{rec.start()}catch(e){}
 };
-$("myrec").onclick=()=>{if(aurl)new Audio(aurl).play()};
-function playModel(it){if(it&&it.a){try{new Audio(it.a).play();return}catch(e){}}speak(it.w)}
+$("myrec").onclick=()=>{if(!aurl)return;stopSounds();ma=new Audio(aurl);ma.play().catch(()=>{})};
+function playModel(it){stopSounds();if(it&&it.a){try{cm=new Audio(it.a);cm.play().catch(()=>{});return}catch(e){}}speak(it.w)}
 $("hear").onclick=()=>playModel(cur);
 $("next").onclick=show;
 // admin
