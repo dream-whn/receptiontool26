@@ -149,6 +149,7 @@ if(!SR)manual();
 const pyN=(t,tone)=>{try{return pinyinPro.pinyin(norm(t),{toneType:tone?"symbol":"none",type:"array"}).join("").replace(/\s/g,"")}catch(e){return norm(t)}};
 const pyA=(t,tone)=>{try{const a=pinyinPro.pinyin(norm(t),{toneType:tone?"symbol":"none",type:"array"});return Array.isArray(a)?a.map(x=>String(x).replace(/\s/g,"")):null}catch(e){return null}};
 const hasT=x=>/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/.test(x),stripT=x=>x.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const SYLN=x=>stripT(x).replace(/^zh/,"z").replace(/^ch/,"c").replace(/^sh/,"s").replace(/^l/,"n").replace(/uan$/,"un").replace(/ng$/,"n");
 function seqHas(aa,ta,loose){if(!aa||!ta||!ta.length)return false;
   for(let i=0;i+ta.length<=aa.length;i++){let ok=true;for(let j=0;j<ta.length;j++){const x=aa[i+j],t=ta[j];if(!(x===t||(loose&&!hasT(t)&&stripT(x)===stripT(t)))){ok=false;break}}if(ok)return true}
   return false}
@@ -157,7 +158,11 @@ function judge(alts){
   const dbgOn=(()=>{try{return localStorage.getItem("pth_dbg")==="1"}catch(e){return false}})()||Q.get("debug");
   const dbg=dbgOn?"\n聽到:"+alts.join(" / ")+"\n目標:"+cur.w+((pyA(cur.w,1)||[]).length?"("+pyA(cur.w,1).join(" ")+")":"")+"　拼音庫:"+(window.pinyinPro?"已載入":"未載入"):"";if(dbg)$("heard").textContent=dbg;
   const tw=norm(cur.w),tA1=pyA(cur.w,1),tA0=pyA(cur.w,0);let r="no";
-  alts.forEach(a=>{if(norm(a).includes(tw)||seqHas(pyA(a,1),tA1,true))r="great";else if(r!=="great"&&seqHas(pyA(a,0),tA0,false))r="near"});
+  let n=tA1?tA1.length:0;while(n>1&&!hasT(tA1[n-1]))n--;
+  const tC1=tA1?tA1.slice(0,n):null,tC0=tA0?tA0.slice(0,n):null;
+  alts.forEach(a=>{const a1=pyA(a,1),a0=pyA(a,0);
+    if(norm(a).includes(tw)||seqHas(a1,tA1,true)||seqHas(a1,tC1,true))r="great";
+    else if(r!=="great"&&(seqHas(a0,tA0,false)||seqHas(a0&&a0.map(SYLN),tC0&&tC0.map(SYLN),false)))r="near"});
   if(r==="great")result(true);
   else if(r==="near"){const nw=Date.now();if(nw-lastRes<1500)return;lastRes=nw;logAttempt("near");$("fb").textContent="👍";$("fb").className="fb";$("heard").textContent="很接近了!注意讀音和聲調,再試一次"+dbg}
   else result(false)}
@@ -172,16 +177,22 @@ $("mic").onclick=async()=>{
     mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
     mr.onstop=()=>{stream.getTracks().forEach(t=>t.stop());if(chunks.length){aurl=URL.createObjectURL(new Blob(chunks,{type:mr.mimeType||"audio/webm"}));$("myrec").style.display=""}};
     mr.start()}catch(e){mr=null}
-  rec=new SR();rec.lang="zh-CN";rec.interimResults=false;rec.maxAlternatives=5;
+  rec=new SR();rec.lang="zh-CN";rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=5;
   rec.onstart=()=>{listening=true;$("mic").textContent="🛑";$("mic").classList.add("rec");$("fb").textContent="👂";$("fb").className="fb"};
-  let pending=null,done=false;
-  const finish=()=>{if(done)return;done=true;listening=false;$("mic").textContent="🎤";$("mic").classList.remove("rec");stopRec();
+  let pending=null,done=false,dt=null,hc=null;
+  const finish=()=>{if(done)return;done=true;clearTimeout(dt);clearTimeout(hc);listening=false;$("mic").textContent="🎤";$("mic").classList.remove("rec");stopRec();
     const a=pending;pending=null;rec.onresult=rec.onend=rec.onerror=null;
     if(a)setTimeout(()=>judge(a),350)};
   rec.onend=finish;
   rec.onerror=e=>{if(e.error==="no-speech"||e.error==="aborted"||e.error==="not-allowed"||e.error==="audio-capture"||e.error==="network")finish();$("fb").textContent="";$("heard").textContent=e.error==="not-allowed"?"請允許使用麥克風":"沒聽清楚,再說一次"};
-  rec.onresult=e=>{if(pending||done)return;pending=[...e.results[0]].map(a=>a.transcript);try{rec.stop()}catch(x){}setTimeout(finish,1500)};
+  rec.onresult=e=>{if(done)return;
+    let lastFinal=false;const segs=[];for(let i=0;i<e.results.length;i++){segs.push(e.results[i]);lastFinal=!!e.results[i].isFinal}
+    const top=segs.map(r=>r[0]?r[0].transcript:"").join("");const alts=[top];
+    segs.forEach(r=>{for(let j=0;j<r.length;j++){const t=r[j].transcript;if(t&&alts.indexOf(t)<0)alts.push(t)}});
+    pending=alts.filter(Boolean).slice(0,8);
+    clearTimeout(dt);dt=setTimeout(()=>{if(done)return;try{rec.stop()}catch(x){}setTimeout(finish,1200)},lastFinal?600:1000)};
   try{rec.start()}catch(e){}
+  hc=setTimeout(()=>{if(!done){try{rec.stop()}catch(x){}setTimeout(finish,1200)}},7000);
 };
 $("myrec").onclick=()=>{if(!aurl)return;stopSounds();ma=new Audio(aurl);ma.play().catch(()=>{})};
 function playModel(it){stopSounds();if(it&&it.a){try{cm=new Audio(it.a);cm.play().catch(()=>{});return}catch(e){}}speak(it.w)}
