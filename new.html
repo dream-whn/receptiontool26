@@ -70,6 +70,16 @@ button.big{font-size:1.8rem;padding:18px 44px;background:linear-gradient(var(--g
 #play .who .ttl{display:none}
 #play .who #who2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 #play #switch{padding:4px 12px;font-size:.9rem;margin:0;white-space:nowrap;flex:none}
+#play .tbtn{padding:4px 12px;font-size:.95rem;margin:0;white-space:nowrap;flex:none;max-width:9.5em;overflow:hidden;text-overflow:ellipsis}
+#thPick{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:98;padding:16px}
+#thPick .box{background:var(--card);border:6px solid var(--bd);border-radius:32px;padding:18px;width:min(94vw,640px);max-height:88dvh;overflow:auto;text-align:center}
+#thPick .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin:12px 0}
+#thPick .tile{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;font-size:1.1rem;margin:0;border-radius:22px}
+#thPick .tile .e{font-size:3rem;line-height:1.1;height:3.4rem;display:flex;align-items:center}
+#thPick .tile .e img{width:3.4rem;height:3.4rem;object-fit:cover;border-radius:12px}
+#thPick .tile.on{outline:5px solid var(--ok)}
+.bar{height:12px;border-radius:6px;background:rgba(0,0,0,.1);overflow:hidden;min-width:80px}.bar i{display:block;height:100%;background:var(--ok)}
+.chip{display:inline-block;font-size:.85rem;padding:1px 8px;margin:2px 4px 0 0;border-radius:999px;border:2px solid var(--bd)}
 #play .gear{width:42px;height:42px;padding:0;margin:0;font-size:1.2rem;opacity:.55;border-radius:50%;flex:none}
 #play .stage{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px}
 #play .pcard{position:relative;flex:1;min-height:0;margin:6px 0;padding:12px;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -105,6 +115,7 @@ button.big{font-size:1.8rem;padding:18px 44px;background:linear-gradient(var(--g
   <div class="top">
     <div class="stars" id="stars">⭐ 0</div>
     <div class="who"><h1 class="ic">🐼</h1><span id="who2"></span><button class="sec" id="switch">👤 換人</button></div>
+    <button class="sec tbtn" id="thBtn" style="display:none" aria-label="選擇主題">🎨 全部</button>
     <button class="sec gear" id="toAdmin" title="老師設定" aria-label="老師設定">⚙️</button>
   </div>
   <div class="stage">
@@ -122,6 +133,7 @@ button.big{font-size:1.8rem;padding:18px 44px;background:linear-gradient(var(--g
   </div>
 </div></div>
 
+<div id="thPick"><div class="box"><div style="font-size:1.5rem">🎨 想練習哪一個主題?</div><div class="grid" id="thGrid"></div><button class="sec" id="thClose">關閉</button></div></div>
 <div id="admin">
   <h1 style="text-align:center">⚙️ 老師設定</h1>
   <div class="card">
@@ -133,6 +145,7 @@ button.big{font-size:1.8rem;padding:18px 44px;background:linear-gradient(var(--g
     <div class="row"><span class="small">預覽:</span><span id="prev" style="font-size:2.5rem"></span></div>
     <button id="add">➕ 加入</button>
   </div>
+  <div class="card" id="ana"></div>
   <div class="card" id="list"></div>
   <div class="card" id="nmgr"></div>
   <div class="card" id="stu"></div>
@@ -169,8 +182,9 @@ const $=id=>document.getElementById(id);
 function load(){try{const s=localStorage.getItem(KEY);words=s?JSON.parse(s):DEF.slice()}catch(e){words=DEF.slice()}if(!words.length)words=DEF.slice()}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(words))}catch(e){alert("儲存空間已滿,這次的更改沒有保存。請刪除一些不用的詞語或照片")}}
 function draw(el,it){el.innerHTML="";if(it.img){const i=new Image();i.src=it.img;el.appendChild(i)}else el.textContent=it.e||"❓"}
-function show(){stopSounds();tries=0;$("myrec").style.display="none";$("fb").textContent="";$("fb").className="fb";$("heard").textContent="";
-  const pool=words.filter(x=>!x.np);
+function show(){stopSounds();updThBtn();tries=0;$("myrec").style.display="none";$("fb").textContent="";$("fb").className="fb";$("heard").textContent="";
+  let pool=words.filter(x=>!x.np);
+  if(SELT){const q=pool.filter(x=>(x.t||[]).indexOf(SELT)>=0);if(q.length)pool=q;else{SELT="";saveSelT();updThBtn()}}
   if(!pool.length){cur=null;$("pic").textContent="🖼️";$("heard").textContent="老師還沒有為詞語加上圖片";return}
   let n;do{n=pool[Math.floor(Math.random()*pool.length)]}while(pool.length>1&&cur&&n===cur);cur=n;
   draw($("pic"),cur);}
@@ -273,7 +287,7 @@ $("add").onclick=()=>{const w=$("nw").value.trim();if(!w){alert("請輸入詞語
   $("nw").value=$("np").value=$("ne").value="";$("np").dataset.m="";$("nf").value="";upImg=null;prev();render()};
 $("reset").onclick=()=>{if(confirm("還原預設詞語?")){words=DEF.slice();save();render()}};
 $("toAdmin2").onclick=()=>$("toAdmin").onclick();
-$("toAdmin").onclick=()=>askPin("請輸入老師密碼",v=>{if(v===getPin()){$("play").style.display="none";$("who").style.display="none";$("clsPick").style.display="none";$("admin").style.display="block";render();renderNm();renderStu();renderDiag()}else alert("密碼不正確")});
+$("toAdmin").onclick=()=>askPin("請輸入老師密碼",v=>{if(v===getPin()){$("play").style.display="none";$("who").style.display="none";$("clsPick").style.display="none";$("admin").style.display="block";render();renderNm();renderStu();renderDiag();renderAna(false)}else alert("密碼不正確")});
 $("chpw").onclick=()=>askPin("輸入新密碼",v=>{if(!v)return;try{localStorage.setItem(PK,v);alert("密碼已更新")}catch(e){alert("無法儲存密碼")}});
 $("nw").oninput=()=>{const n=$("np");if(!n.dataset.m)n.value=py($("nw").value.trim())};
 $("np").oninput=()=>{$("np").dataset.m="1"};
@@ -389,9 +403,18 @@ function applySheet(list){
   list.forEach(r=>{const w=String(r[0]||"").trim();if(!w)return;
     const l=by[w]||{},li=(l.img&&String(l.img).indexOf("data:")===0)?l.img:null;
     const e=String(r[1]||"").trim()||emojiFor(w)||(l.le||""),url=driveUrl(String(r[2]||"").trim()),img=li||url||undefined;
-    out.push({w:w,p:py(w),e:img?undefined:(e||undefined),img:img,a:l.a,le:l.le,np:!(img||e)})});
+    out.push({w:w,p:py(w),e:img?undefined:(e||undefined),img:img,a:l.a,le:l.le,np:!(img||e),t:String(r[3]||"").split(/[,,、]/).map(x=>x.trim()).filter(Boolean)})});
   if(out.length){words=out;return true}return false}
-let THEME="";
+let THEME="",SELT="";const STK="pth_seltheme_v1_"+(CLS||"");
+try{SELT=localStorage.getItem(STK)||""}catch(e){}
+function saveSelT(){try{localStorage.setItem(STK,SELT)}catch(e){}}
+function themeList(){const m={};words.forEach(w=>{if(w.np)return;(w.t||[]).forEach(t=>{(m[t]||(m[t]=[])).push(w)})});return m}
+function updThBtn(){const m=themeList(),n=Object.keys(m).length,b=$("thBtn");if(SELT&&!m[SELT]){SELT="";saveSelT()}
+  b.style.display=n>=2?"":"none";b.textContent="🎨 "+(SELT||"全部")}
+function openThPick(){const m=themeList(),g=$("thGrid");g.innerHTML="";
+  const add=(label,w,on,val)=>{const b=document.createElement("button");b.type="button";b.className="sec tile"+(on?" on":"");const e=document.createElement("div");e.className="e";if(w)draw(e,w);else e.textContent="🌈";const t=document.createElement("div");t.textContent=label;b.append(e,t);b.onclick=()=>{SELT=val;saveSelT();updThBtn();$("thPick").style.display="none";cur=null;show()};g.appendChild(b)};
+  add("全部",null,!SELT,"");Object.keys(m).forEach(t=>add(t,m[t][0],SELT===t,t));$("thPick").style.display="flex"}
+$("thBtn").onclick=openThPick;$("thClose").onclick=()=>{$("thPick").style.display="none"};$("thPick").onclick=e=>{if(e.target===$("thPick"))$("thPick").style.display="none"};
 function showTheme(t){THEME=String(t||"");try{if(CLS)$("clsl").textContent="🏫 "+CLS;const n=$("sheetnote").querySelector(".thm");if(n)n.textContent=THEME?"目前主題:"+THEME:"目前主題:全部"}catch(e){}}
 async function loadSheetWords(){
   if(!SHEET_URL)return;
@@ -399,9 +422,48 @@ async function loadSheetWords(){
   try{const r=await fetch(SHEET_URL+"?action=words&class="+encodeURIComponent(CLS)),o=await r.json();
     if(o&&Array.isArray(o.words)&&o.words.length){
       try{localStorage.setItem(WK,JSON.stringify(o.words))}catch(e){}
-      showTheme(o.theme);
+      showTheme(o.theme);updThBtn();
       if(applySheet(o.words)&&$("admin").style.display==="block")render()}
     return true}catch(e){return false}}
+const VK="pth_vkey_v1";let anaCls="";
+function el(t,txt,css){const e=document.createElement(t);if(txt!==undefined)e.textContent=txt;if(css)e.style.cssText=css;return e}
+function pct(g,t){return t?Math.round(g/t*100):0}
+async function renderAna(force){
+  const box=$("ana");box.innerHTML="";box.appendChild(el("b","📊 班別分析(來自試算表的最新紀錄)"));
+  if(!SHEET_URL){box.appendChild(el("div","這個網站還沒有連接試算表。","margin:6px 0"));return}
+  const classes=PICK.slice();if(CLS&&classes.indexOf(CLS)<0)classes.unshift(CLS);
+  if(!anaCls)anaCls=CLS||classes[0]||"";
+  const row=el("div",undefined,"display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0");
+  if(classes.length){const sel=document.createElement("select");sel.style.cssText="font:inherit;padding:8px;border:2px solid var(--bd);border-radius:12px;background:var(--bg);color:var(--tx)";classes.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;if(c===anaCls)o.selected=true;sel.appendChild(o)});sel.onchange=()=>{anaCls=sel.value;renderAna(true)};row.appendChild(sel)}
+  const rb=el("button","🔄 重新載入");rb.className="sec";rb.onclick=()=>renderAna(true);row.appendChild(rb);
+  const pb=el("button","🔑 更換查看密碼");pb.className="sec";pb.onclick=()=>{try{localStorage.removeItem(VK)}catch(e){}renderAna(true)};row.appendChild(pb);
+  box.appendChild(row);
+  let key="";try{key=localStorage.getItem(VK)||""}catch(e){}
+  if(!key){
+    if(!force){const b=el("button","📥 查看分析");b.onclick=()=>renderAna(true);box.appendChild(b);return}
+    box.appendChild(el("div","請輸入「後台查看密碼」。它是你在試算表「設定」分頁 D2 格自己設定的密碼。","margin:6px 0"));
+    askPin("後台查看密碼(試算表「設定」分頁 D2)",v=>{if(!v)return;try{localStorage.setItem(VK,v)}catch(e){}renderAna(true)});return}
+  const msg=el("div","讀取中…","margin:6px 0");box.appendChild(msg);
+  let o=null;try{const r=await fetch(SHEET_URL+"?action=stats&class="+encodeURIComponent(anaCls)+"&key="+encodeURIComponent(key));o=await r.json()}catch(e){}
+  if(!o){msg.textContent="❌ 讀取失敗。請檢查網絡,或確認 Apps Script 已更新並重新部署成新版本。";return}
+  if(!o.ok){try{localStorage.removeItem(VK)}catch(e){}
+    msg.textContent=o.err==="nopw"?"請先在試算表「設定」分頁的 D2 格填上一個查看密碼,然後回來再按「重新載入」。":"密碼不正確。請按「🔄 重新載入」再輸入一次。";return}
+  msg.remove();
+  const S=o.students||[];
+  box.appendChild(el("div","班別 "+o.cls+":"+S.length+" 位學生,共練習 "+o.total.t+" 次,說對率 "+pct(o.total.g,o.total.t)+"%","margin:8px 0;font-weight:700"));
+  if(!S.length){box.appendChild(el("div","這個班還沒有練習紀錄。"));return}
+  box.appendChild(el("div","各主題說對率","margin:10px 0 4px;font-weight:700"));
+  (o.themes||[]).slice().sort((a,b)=>pct(a.great,a.tries)-pct(b.great,b.tries)).forEach(t=>{
+    const r=el("div",undefined,"display:flex;align-items:center;gap:8px;margin:4px 0"),n=el("span",t.t,"flex:0 0 7em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"),bar=el("div");bar.className="bar";bar.style.flex="1";const i=document.createElement("i"),p=pct(t.great,t.tries);i.style.width=p+"%";if(p<50)i.style.background="var(--no)";else if(p<75)i.style.background="#f5a623";bar.appendChild(i);
+    r.append(n,bar,el("span",p+"%("+t.tries+"次,"+t.kids+"人)","flex:0 0 8.5em;font-size:.85rem"));box.appendChild(r)});
+  box.appendChild(el("div","全班最多人說不對的詞語","margin:12px 0 4px;font-weight:700"));
+  box.appendChild(el("div",(o.words||[]).length?(o.words||[]).map(w=>w.w+"("+w.f+"次未對"+(w.th?","+w.th:"")+")").join("、"):"目前沒有","font-size:.95rem"));
+  box.appendChild(el("div","每位學生(說對率低的在前面)","margin:12px 0 4px;font-weight:700"));
+  S.slice().sort((a,b)=>pct(a.g,a.t)-pct(b.g,b.t)).forEach(u=>{
+    const d=el("div",undefined,"padding:8px 0;border-top:1px solid var(--bd)");
+    d.appendChild(el("b",u.n));d.appendChild(el("span","  "+u.t+" 次 · 說對率 "+pct(u.g,u.t)+"% · 最近 "+(u.l||"-")));
+    const c=el("div");Object.keys(u.th||{}).forEach(t=>{const x=u.th[t];c.appendChild(el("span",t+" "+pct(x[1],x[0])+"%","")).className="chip"});d.appendChild(c);
+    if(u.f)d.appendChild(el("div","需要跟進:"+u.f,"font-size:.9rem;color:var(--no);margin-top:2px"));box.appendChild(d)})}
 function initSheetNote(){
   const n=$("sheetnote");if(!SHEET_URL){n.textContent="";return}
   n.textContent="詞語由 Google 試算表的「詞語」工作表管理:在試算表新增、修改或刪除詞語,小朋友打開網站時會自動更新。要換主題,請到試算表的「設定」分頁,在這個班的「目前主題」填主題名稱。這裡新增的詞語只會留在這部裝置;照片和錄音仍在這裡設定,會套用到試算表裡同名的詞語。";
