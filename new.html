@@ -202,11 +202,13 @@ if(!SR){$("note").textContent="此瀏覽器不支援語音辨識,請用 Chrome �
 function manual(){const d=document.createElement("div");d.id="mj";d.innerHTML='<button onclick="result(true)">⭕</button><button class="sec" onclick="result(false)">❌</button>';$("note").appendChild(d)}
 if(!SR)manual();
 const pyN=(t,tone)=>{try{return pinyinPro.pinyin(norm(t),{toneType:tone?"symbol":"none",type:"array"}).join("").replace(/\s/g,"")}catch(e){return norm(t)}};
-const pyA=(t,tone)=>{try{const a=pinyinPro.pinyin(norm(t),{toneType:tone?"symbol":"none",type:"array"});return Array.isArray(a)?a.map(x=>String(x).replace(/\s/g,"")):null}catch(e){return null}};
+const T2S=(()=>{const m={},s="襪袜褲裤內内裡里麼么們们這这個个來来時时間间對对說说話话讀读買买賣卖開开關关門门馬马鳥鸟魚鱼雞鸡鴨鸭鵝鹅貓猫豬猪龍龙龜龟蟲虫蝦虾蠅蝇蘋苹蘿萝葉叶樹树華华國国學学書书筆笔紙纸車车電电飛飞機机單单輪轮場场園园鐘钟錶表鏡镜鑰钥傘伞燈灯檯台櫃柜針针線线絲丝紅红綠绿藍蓝黃黄顏颜長长頸颈頭头臉脸齒齿髮发腳脚腦脑見见聽听語语樂乐愛爱親亲媽妈嬰婴寶宝孫孙爺爷師师醫医護护員员農农飯饭麵面麥麦餅饼湯汤薑姜蔥葱蘆芦檸柠錢钱銀银鐵铁鋼钢鍋锅盤盘壺壶籃篮網网鎖锁鈴铃號号響响聲声點点數数級级幫帮讓让給给當当應应為为與与從从還还過过進进邊边後后東东溫温涼凉熱热雲云風风陽阳陰阴蘭兰櫻樱蓮莲麗丽氣气煙烟爐炉燒烧滅灭淚泪滾滚漢汉灣湾島岛嶼屿橋桥圖图畫画藝艺術术戲戏劇剧遊游運运動动騎骑躍跃鞦秋韆千襯衬綿绵絨绒緊紧鬆松襖袄圍围織织縫缝鈕钮釦扣領领帶带鍊链鏈链飾饰環环鐲镯項项蠟蜡筍笋鷹鹰獅狮貝贝鯨鲸鯊鲨鱷鳄蝸蜗蟬蝉鴿鸽鶴鹤鴕鸵駝驼驢驴騾骡鱉鳖獸兽";for(let i=0;i+1<s.length;i+=2)m[s[i]]=s[i+1];return m})();
+const s2=t=>String(t||"").replace(/[\u4e00-\u9fff]/g,c=>T2S[c]||c);
+const pyA=(t,tone)=>{try{const a=pinyinPro.pinyin(s2(norm(t)),{toneType:tone?"symbol":"none",type:"array"});return Array.isArray(a)?a.map(x=>String(x).replace(/\s/g,"")):null}catch(e){return null}};
 const hasT=x=>/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/.test(x),stripT=x=>x.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const SYLN=x=>stripT(x).replace(/^zh/,"z").replace(/^ch/,"c").replace(/^sh/,"s").replace(/^l/,"n").replace(/uan$/,"un").replace(/ng$/,"n");
 function seqHas(aa,ta,loose){if(!aa||!ta||!ta.length)return false;
-  for(let i=0;i+ta.length<=aa.length;i++){let ok=true;for(let j=0;j<ta.length;j++){const x=aa[i+j],t=ta[j];if(!(x===t||(loose&&!hasT(t)&&stripT(x)===stripT(t)))){ok=false;break}}if(ok)return true}
+  for(let i=0;i+ta.length<=aa.length;i++){let ok=true;for(let j=0;j<ta.length;j++){const x=aa[i+j],t=ta[j];if(!(x===t||(loose&&!hasT(t)&&stripT(x)===stripT(t))||(!loose&&j>0&&!hasT(x)&&stripT(t)===x))){ok=false;break}}if(ok)return true}
   return false}
 function judge(alts){
   lastHeard=(window.pinyinPro?"":"[拼音庫未載入] ")+alts.slice(0,3).join(" / ").slice(0,80);
@@ -216,7 +218,7 @@ function judge(alts){
   let n=tA1?tA1.length:0;while(n>1&&!hasT(tA1[n-1]))n--;
   const tC1=tA1?tA1.slice(0,n):null,tC0=tA0?tA0.slice(0,n):null;
   alts.forEach(a=>{const a1=pyA(a,1),a0=pyA(a,0);
-    if(norm(a).includes(tw)||seqHas(a1,tA1,true)||seqHas(a1,tC1,true))r="great";
+    if(s2(norm(a)).includes(s2(tw))||seqHas(a1,tA1,true)||seqHas(a1,tC1,true))r="great";
     else if(r!=="great"&&(seqHas(a0,tA0,false)||seqHas(a0&&a0.map(SYLN),tC0&&tC0.map(SYLN),false)))r="near"});
   if(r==="great")result(true);
   else if(r==="near"){const nw=Date.now();if(nw-lastRes<1500)return;lastRes=nw;logAttempt("near");$("fb").textContent="👍";$("fb").className="fb";$("heard").textContent="很接近了!注意讀音和聲調,再試一次"+dbg}
@@ -262,7 +264,7 @@ function render(){const L=$("list");{const nn=words.filter(x=>x.np).length;L.inn
     const rb=document.createElement("button");rb.className="sec";rb.textContent=it.a?"🎙️✓":"🎙️";rb.title="錄標準讀音";rb.onclick=()=>recModel(it,rb);
     const pb=document.createElement("button");pb.className="sec";pb.textContent="▶️";pb.style.display=it.a?"":"none";pb.onclick=()=>playModel(it);
     const ib=document.createElement("button");ib.className="sec";ib.textContent="🖼️";ib.title="更換成自己的照片";
-    ib.onclick=()=>{const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.onchange=()=>{const f=inp.files[0];if(f)resizeFile(f,u=>{it.img=u;it.np=false;it.e=undefined;save();render()})};inp.click()};
+    ib.onclick=()=>{const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.onchange=()=>{const f=inp.files[0];if(f)resizeFile(f,u=>{it.img=u;it.np=false;it.e=undefined;save();render();if(SHEET_URL)pushImage(it,u)})};inp.click()};
     const eb=document.createElement("button");eb.className="sec";eb.textContent="😀";eb.title="輸入表情符號作為圖片";
     eb.onclick=()=>{const v=(prompt("請輸入一個表情符號作為「"+it.w+"」的圖片(例如 🍎):",it.le||it.e||"")||"").trim();if(!v)return;it.le=v;it.e=v;it.img=undefined;it.np=false;save();render()};
     d.append(e,t,rb,pb,ib,eb,b2,b);L.appendChild(d)})}
@@ -410,7 +412,9 @@ try{SELT=localStorage.getItem(STK)||""}catch(e){}
 function saveSelT(){try{localStorage.setItem(STK,SELT)}catch(e){}}
 function themeList(){const m={};words.forEach(w=>{if(w.np)return;(w.t||[]).forEach(t=>{(m[t]||(m[t]=[])).push(w)})});return m}
 function updThBtn(){const m=themeList(),n=Object.keys(m).length,b=$("thBtn");if(SELT&&!m[SELT]){SELT="";saveSelT()}
-  b.style.display=n>=2?"":"none";b.textContent="🎨 "+(SELT||"全部")}
+  b.style.display=n>=2?"":"none";b.textContent="🎨 "+(SELT||"全部");
+  try{const i=$("sheetnote").querySelector(".thi");if(i){const all={};words.forEach(w=>(w.t||[]).forEach(t=>{all[t]=(all[t]||0)+1}));const k=Object.keys(all);
+    i.textContent=k.length?"讀到的主題:"+k.map(t=>t+"("+all[t]+"個詞"+(m[t]?"":",還沒有圖片")+")").join("、")+(n>=2?"":" → 要有 2 個以上有圖片的主題,學生畫面才會出現主題按鈕"):"沒有讀到任何主題。請確認試算表「詞語」第 5 欄有填主題,而且 Apps Script 已更新並重新部署。"}}catch(e){}}
 function openThPick(){const m=themeList(),g=$("thGrid");g.innerHTML="";
   const add=(label,w,on,val)=>{const b=document.createElement("button");b.type="button";b.className="sec tile"+(on?" on":"");const e=document.createElement("div");e.className="e";if(w)draw(e,w);else e.textContent="🌈";const t=document.createElement("div");t.textContent=label;b.append(e,t);b.onclick=()=>{SELT=val;saveSelT();updThBtn();$("thPick").style.display="none";cur=null;show()};g.appendChild(b)};
   add("全部",null,!SELT,"");Object.keys(m).forEach(t=>add(t,m[t][0],SELT===t,t));$("thPick").style.display="flex"}
@@ -425,6 +429,22 @@ async function loadSheetWords(){
       showTheme(o.theme);updThBtn();
       if(applySheet(o.words)&&$("admin").style.display==="block")render()}
     return true}catch(e){return false}}
+function toast(t,ms){let e=$("toast");if(!e){e=document.createElement("div");e.id="toast";e.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#333;color:#fff;padding:12px 18px;border-radius:16px;z-index:120;max-width:90vw;text-align:center;font-size:1rem";document.body.appendChild(e)}
+  e.textContent=t;e.style.display="block";clearTimeout(e._t);e._t=setTimeout(()=>{e.style.display="none"},ms||3500)}
+async function pushImage(it,u){
+  let key="";try{key=localStorage.getItem(VK)||""}catch(e){}
+  if(!key){askPin("後台查看密碼(試算表「設定」分頁 D2),用來把照片存到 Google Drive",v=>{if(v){try{localStorage.setItem(VK,v)}catch(e){}pushImage(it,u)}else toast("沒有輸入密碼,照片暫時只存在這部裝置",5000)});return}
+  toast("⏳ 正在把「"+it.w+"」的照片存到 Google Drive…",60000);
+  let o=null;
+  try{const r=await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({a:"upload",w:it.w,k:key,data:u})});o=await r.json()}catch(e){}
+  if(!o){await new Promise(r=>setTimeout(r,2000));await loadSheetWords();
+    try{const c=JSON.parse(localStorage.getItem(WK)||"[]");if(c.some(r=>r[0]===it.w&&/^https?:/.test(String(r[2]||""))))o={ok:true}}catch(e){}}
+  if(!o){toast("❌ 上傳失敗。可能沒有網絡,或 Apps Script 還沒有更新並重新部署。照片暫時只存在這部裝置",8000);return}
+  if(!o.ok){
+    if(o.err==="badpw"||o.err==="nopw")try{localStorage.removeItem(VK)}catch(e){}
+    const m={badpw:"密碼不正確,請再上傳一次並輸入「設定」分頁 D2 的密碼",nopw:"請先在試算表「設定」分頁的 D2 格設定查看密碼",share:"Google 帳號不允許把檔案設為「知道連結的任何人」(學校帳號常見)。請改用表情符號,或請學校管理員開放",drive:"Apps Script 還沒有 Google Drive 權限。請在 Apps Script 執行 authorizeDrive 並重新部署",bad:"照片格式不支援"}[o.err]||"上傳失敗";
+    toast("❌ "+m+"。照片暫時只存在這部裝置",9000);return}
+  {const cw=words.find(x=>x.w===it.w)||it;cw.img=undefined;it.img=undefined;save()}await loadSheetWords();render();toast("✅ 已存到 Google Drive,所有裝置都會看到「"+it.w+"」的照片",5000)}
 const VK="pth_vkey_v1";let anaCls="";
 function el(t,txt,css){const e=document.createElement(t);if(txt!==undefined)e.textContent=txt;if(css)e.style.cssText=css;return e}
 function pct(g,t){return t?Math.round(g/t*100):0}
@@ -469,7 +489,7 @@ function initSheetNote(){
   n.textContent="詞語由 Google 試算表的「詞語」工作表管理:在試算表新增、修改或刪除詞語,小朋友打開網站時會自動更新。要換主題,請到試算表的「設定」分頁,在這個班的「目前主題」填主題名稱。這裡新增的詞語只會留在這部裝置;照片和錄音仍在這裡設定,會套用到試算表裡同名的詞語。";
   const b=document.createElement("button");b.className="sec";b.textContent="🔄 重新讀取試算表的詞語";
   b.onclick=async()=>{b.textContent="讀取中…";const ok=await loadSheetWords();b.textContent=ok?"✅ 已更新":"❌ 讀取失敗";setTimeout(()=>{b.textContent="🔄 重新讀取試算表的詞語"},2000);render()};
-  n.appendChild(document.createElement("br"));const th=document.createElement("b");th.className="thm";th.style.display="block";th.style.margin="6px 0";n.appendChild(th);n.appendChild(b)}
+  n.appendChild(document.createElement("br"));const th=document.createElement("b");th.className="thm";th.style.display="block";th.style.margin="6px 0";n.appendChild(th);const ti=el("div",undefined,"font-size:.9rem;margin:4px 0");ti.className="thi";n.appendChild(ti);n.appendChild(b);updThBtn()}
 const PICK=(()=>{const c=(Q.get("classes")||"").split(",").map(x=>x.replace(/[\[\]*?:\/\\.]/g,"").trim()).filter(Boolean).slice(0,12);return c.length?c:(CUSTOM?[]:["THAM","THPM","JKAM","JKPM","RFAM","RFPM"])})();
 function goClass(c){const u=new URL(location.href);if(c)u.searchParams.set("class",c);else u.searchParams.delete("class");location.href=u.toString()}
 function showPick(){const b=$("clsBtns");b.innerHTML="";let last="";try{last=localStorage.getItem("pth_lastcls")||""}catch(e){}
