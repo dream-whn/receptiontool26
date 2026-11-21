@@ -382,28 +382,32 @@ function renderNm(){
 const WK="pth_sheetwords_v1"+SFX;
 function emojiFor(w){return EMOJI[w]||""}
 function localWords(){try{const x=localStorage.getItem(KEY);return x?JSON.parse(x):[]}catch(e){return[]}}
+const driveUrl=u=>{const m=u.match(/drive\.google\.com\/file\/d\/([\w-]+)/)||u.match(/drive\.google\.com\/[^\s]*[?&]id=([\w-]+)/);return m?"https://drive.google.com/thumbnail?id="+m[1]+"&sz=w1000":u};
 function applySheet(list){
   const by={};localWords().forEach(x=>{if(x&&x.w)by[x.w]=x});
   const out=[];
   list.forEach(r=>{const w=String(r[0]||"").trim();if(!w)return;
     const l=by[w]||{},li=(l.img&&String(l.img).indexOf("data:")===0)?l.img:null;
-    const e=String(r[1]||"").trim()||emojiFor(w)||(l.le||""),url=String(r[2]||"").trim(),img=li||url||undefined;
+    const e=String(r[1]||"").trim()||emojiFor(w)||(l.le||""),url=driveUrl(String(r[2]||"").trim()),img=li||url||undefined;
     out.push({w:w,p:py(w),e:img?undefined:(e||undefined),img:img,a:l.a,le:l.le,np:!(img||e)})});
   if(out.length){words=out;return true}return false}
+let THEME="";
+function showTheme(t){THEME=String(t||"");try{if(CLS)$("clsl").textContent="🏫 "+CLS;const n=$("sheetnote").querySelector(".thm");if(n)n.textContent=THEME?"目前主題:"+THEME:"目前主題:全部"}catch(e){}}
 async function loadSheetWords(){
   if(!SHEET_URL)return;
   try{const c=localStorage.getItem(WK);if(c)applySheet(JSON.parse(c))}catch(e){}
   try{const r=await fetch(SHEET_URL+"?action=words&class="+encodeURIComponent(CLS)),o=await r.json();
     if(o&&Array.isArray(o.words)&&o.words.length){
       try{localStorage.setItem(WK,JSON.stringify(o.words))}catch(e){}
+      showTheme(o.theme);
       if(applySheet(o.words)&&$("admin").style.display==="block")render()}
     return true}catch(e){return false}}
 function initSheetNote(){
   const n=$("sheetnote");if(!SHEET_URL){n.textContent="";return}
-  n.textContent="詞語由 Google 試算表的「詞語」工作表管理:在試算表新增、修改或刪除詞語,小朋友打開網站時會自動更新。這裡新增的詞語只會留在這部裝置;照片和錄音仍在這裡設定,會套用到試算表裡同名的詞語。";
+  n.textContent="詞語由 Google 試算表的「詞語」工作表管理:在試算表新增、修改或刪除詞語,小朋友打開網站時會自動更新。要換主題,請到試算表的「設定」分頁,在這個班的「目前主題」填主題名稱。這裡新增的詞語只會留在這部裝置;照片和錄音仍在這裡設定,會套用到試算表裡同名的詞語。";
   const b=document.createElement("button");b.className="sec";b.textContent="🔄 重新讀取試算表的詞語";
   b.onclick=async()=>{b.textContent="讀取中…";const ok=await loadSheetWords();b.textContent=ok?"✅ 已更新":"❌ 讀取失敗";setTimeout(()=>{b.textContent="🔄 重新讀取試算表的詞語"},2000);render()};
-  n.appendChild(document.createElement("br"));n.appendChild(b)}
+  n.appendChild(document.createElement("br"));const th=document.createElement("b");th.className="thm";th.style.display="block";th.style.margin="6px 0";n.appendChild(th);n.appendChild(b)}
 const PICK=(()=>{const c=(Q.get("classes")||"").split(",").map(x=>x.replace(/[\[\]*?:\/\\.]/g,"").trim()).filter(Boolean).slice(0,12);return c.length?c:(CUSTOM?[]:["THAM","THPM","JKAM","JKPM","RFAM","RFPM"])})();
 function goClass(c){const u=new URL(location.href);if(c)u.searchParams.set("class",c);else u.searchParams.delete("class");location.href=u.toString()}
 function showPick(){const b=$("clsBtns");b.innerHTML="";let last="";try{last=localStorage.getItem("pth_lastcls")||""}catch(e){}
